@@ -1,6 +1,6 @@
 ### Fork of https://github.com/macarthur-lab/clinvar 
 
-#### This code is being updated and is currently in beta.  
+#### This code is being updated and is currently in beta with the goal to simplify and streamline code, and execution.  
 
 #### In 1 sentence
 
