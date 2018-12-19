@@ -1,5 +1,3 @@
-FORK or
-
 ### Fork of https://github.com/macarthur-lab/clinvar 
 
 #### This code is being updated and is currently in beta.  
