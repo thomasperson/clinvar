@@ -27,9 +27,9 @@ g.add("--b37-genome", help="b37 .fa genome reference file", default=None, requir
 g.add("--b38-genome", help="b38 .fa genome reference file. NOTE: chromosome names must be like '1', '2'.. 'X', 'Y', 'MT'.", default=None, required=False)
 g.add("-X", "--clinvar-xml", help="The local filename of the ClinVarFullRelase.xml.gz file. If not set, grab the latest from NCBI.")
 g.add("-S", "--clinvar-variant-summary-table", help="The local filename of the variant_summary.txt.gz file. If not set, grab the latest from NCBI.")
-g.add("-E", "--exac-sites-vcf",  help="ExAC sites vcf file. If specified, a clinvar table with extra ExAC fields will also be created.")
-g.add("-GE", "--gnomad-exome-sites-vcf",  help="gnomAD exome sites vcf file. If specified, a clinvar table with extra gnomAD exome info fields will also be created.")
-g.add("-GG", "--gnomad-genome-sites-vcf",  help="gnomAD genome sites vcf file. If specified, a clinvar table with extra gnomAD genome info fields will also be created.")
+#g.add("-E", "--exac-sites-vcf",  help="ExAC sites vcf file. If specified, a clinvar table with extra ExAC fields will also be created.")
+#g.add("-GE", "--gnomad-exome-sites-vcf",  help="gnomAD exome sites vcf file. If specified, a clinvar table with extra gnomAD exome info fields will also be created.")
+#g.add("-GG", "--gnomad-genome-sites-vcf",  help="gnomAD genome sites vcf file. If specified, a clinvar table with extra gnomAD genome info fields will also be created.")
 g.add("--output-prefix", default="../output/", help="Final output files will have this prefix")
 g.add("--tmp-dir", default="./output_tmp", help="Temporary output files will have this prefix")
 g = p.add_mutually_exclusive_group()
@@ -45,9 +45,9 @@ for key, value in args.__dict__.items():
 reference_genomes = {'b37': args.b37_genome, 'b38': args.b38_genome}
 clinvar_xml = args.clinvar_xml
 #if clinvar_xml and not os.path.isfile(clinvar_xml)
-exac_sites_vcf = args.exac_sites_vcf
-gnomad_exome_sites_vcf = args.gnomad_exome_sites_vcf
-gnomad_genome_sites_vcf = args.gnomad_genome_sites_vcf
+#exac_sites_vcf = args.exac_sites_vcf
+#gnomad_exome_sites_vcf = args.gnomad_exome_sites_vcf
+#gnomad_genome_sites_vcf = args.gnomad_genome_sites_vcf
 clinvar_variant_summary_table = args.clinvar_variant_summary_table
 output_prefix = args.output_prefix
 
@@ -61,14 +61,14 @@ for key, path in reference_genomes.items():
     if path is not None and not os.path.isfile(path):
         p.error("%s genome reference: file not found: %s" % (key, path))
 
-for label, vcf_path in (('gnomad_genomes', gnomad_genome_sites_vcf), ('gnomad_exomes', gnomad_exome_sites_vcf), ('exac_v1', exac_sites_vcf)):
-    if not vcf_path:
-        continue
-
-    if not os.path.isfile(vcf_path):
-        p.error(label+" sites vcf: file not found: %s" % vcf_path)
-    if not os.path.isfile(vcf_path + ".tbi"):
-        p.error(label+" sites vcf: tabix index not found: %s.tbi" % vcf_path)
+#for label, vcf_path in (('gnomad_genomes', gnomad_genome_sites_vcf), ('gnomad_exomes', gnomad_exome_sites_vcf), ('exac_v1', exac_sites_vcf)):
+#    if not vcf_path:
+#        continue
+#
+#    if not os.path.isfile(vcf_path):
+#        p.error(label+" sites vcf: file not found: %s" % vcf_path)
+#    if not os.path.isfile(vcf_path + ".tbi"):
+#        p.error(label+" sites vcf: tabix index not found: %s.tbi" % vcf_path)
 
 
 def get_remote_file_changed_time(ftp_host, ftp_path):
@@ -148,7 +148,7 @@ for genome_build in ('b37', 'b38'):
         if args.single_or_multi and single_or_multi != args.single_or_multi:
             print("Skippping steps to generate %s table." % single_or_multi)
             continue
-            
+
         fsuffix = "%(single_or_multi)s.%(genome_build)s" % locals() # file suffix
         output_dir = '%(output_prefix)s%(genome_build)s/%(single_or_multi)s' % locals()
         os.system('mkdir -p ' + output_dir)
@@ -160,7 +160,7 @@ for genome_build in ('b37', 'b38'):
         job.add(("cat " +
             "<(gunzip -c IN:%(tmp_dir)s/clinvar_table_normalized.%(fsuffix)s.tsv.gz | head -1) "  # header row
             "<(gunzip -c IN:%(tmp_dir)s/clinvar_table_normalized.%(fsuffix)s.tsv.gz | tail -n +2 | egrep -v \"^[XYM]\" | sort -k1,1n -k2,2n -k3,3 -k4,4 ) " + # numerically sort chroms 1-22
-            "<(gunzip -c IN:%(tmp_dir)s/clinvar_table_normalized.%(fsuffix)s.tsv.gz | tail -n +2 | egrep \"^[XYM]\" | sort -k1,1 -k2,2n -k3,3 -k4,4 ) " +  #sort chroms X,Y,M 
+            "<(gunzip -c IN:%(tmp_dir)s/clinvar_table_normalized.%(fsuffix)s.tsv.gz | tail -n +2 | egrep \"^[XYM]\" | sort -k1,1 -k2,2n -k3,3 -k4,4 ) " +  #sort chroms X,Y,M
             " | bgzip -c > OUT:%(tmp_dir)s/clinvar_allele_trait_pairs.%(fsuffix)s.tsv.gz") % locals())   # lexicogaraphically sort non-numerical chroms at end
 
         # tabix and copy to output dir
@@ -184,7 +184,7 @@ for genome_build in ('b37', 'b38'):
         job.add(("cat " +
             "<(gunzip -c IN:%(tmp_dir)s/clinvar_alleles_combined.%(fsuffix)s.tsv.gz | head -1) "  # header row
             "<(gunzip -c IN:%(tmp_dir)s/clinvar_alleles_combined.%(fsuffix)s.tsv.gz | tail -n +2 | egrep -v \"^[XYM]\" | sort -k1,1n -k2,2n -k3,3 -k4,4 ) " + # numerically sort chroms 1-22
-            "<(gunzip -c IN:%(tmp_dir)s/clinvar_alleles_combined.%(fsuffix)s.tsv.gz | tail -n +2 | egrep \"^[XYM]\" | sort -k1,1 -k2,2n -k3,3 -k4,4 ) " +  #sort chroms X,Y,M 
+            "<(gunzip -c IN:%(tmp_dir)s/clinvar_alleles_combined.%(fsuffix)s.tsv.gz | tail -n +2 | egrep \"^[XYM]\" | sort -k1,1 -k2,2n -k3,3 -k4,4 ) " +  #sort chroms X,Y,M
             " | bgzip -c > OUT:%(tmp_dir)s/clinvar_alleles.%(fsuffix)s.tsv.gz") % locals())   # lexicogaraphically sort non-numerical chroms at end
 
         # tabix and copy to output dir
@@ -208,24 +208,24 @@ for genome_build in ('b37', 'b38'):
         job.add("gunzip -c IN:%(tmp_dir)s/clinvar_alleles.%(fsuffix)s.vcf.gz | head -n 750 > OUT:%(output_dir)s/clinvar_alleles_example_750_rows.%(fsuffix)s.vcf" % locals())
 
         # create tsv table with extra fields from ExAC: filter, ac_adj, an_adj, popmax_ac, popmax_an, popmax
-        if genome_build == "b37":
-            for label, vcf_arg, vcf_path in (('gnomad_genomes', '-gg', gnomad_genome_sites_vcf), ('gnomad_exomes', '-ge', gnomad_exome_sites_vcf), ('exac_v1', '-e', exac_sites_vcf)):
-                if not vcf_path:
-                    continue
-                script_name = "add_exac_fields.py" if label == "exac_v1" else "add_gnomad_fields.py"
-                normalized_vcf = os.path.basename(vcf_path).split('.vcf')[0] + ".normalized.vcf.gz" % locals()
-                job.add(("vt decompose -s IN:%(vcf_path)s | "
-                         "vt normalize -r IN:%(reference_genome)s - | "
-                         "bgzip -c > OUT:%(tmp_dir)s/%(normalized_vcf)s") % locals())
-                job.add("tabix IN:%(tmp_dir)s/%(normalized_vcf)s" % locals(), output_filenames=["%(tmp_dir)s/%(normalized_vcf)s.tbi" % locals()])
-                job.add(("python -u IN:%(script_name)s -i IN:%(tmp_dir)s/clinvar_alleles.%(fsuffix)s.tsv.gz %(vcf_arg)s IN:%(tmp_dir)s/%(normalized_vcf)s | "
-                         "bgzip -c > OUT:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz") % locals())
-                job.add("tabix -S 1 -s 1 -b 2 -e 2 IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz" % locals(), output_filenames=["%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz.tbi" % locals()])
-                job.add("cp IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz.tbi %(output_dir)s/" % locals(), output_filenames=[
-                    "%(output_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz" % locals(),
-                    "%(output_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz.tbi" % locals()])
-
-                job.add("gunzip -c IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz | head -n 750 > OUT:%(output_dir)s/clinvar_alleles_with_%(label)s_example_750_rows.%(fsuffix)s.tsv" % locals())
+        #if genome_build == "b37":
+        #    for label, vcf_arg, vcf_path in (('gnomad_genomes', '-gg', gnomad_genome_sites_vcf), ('gnomad_exomes', '-ge', gnomad_exome_sites_vcf), ('exac_v1', '-e', exac_sites_vcf)):
+        #        if not vcf_path:
+        #            continue
+        #        script_name = "add_exac_fields.py" if label == "exac_v1" else "add_gnomad_fields.py"
+        #        normalized_vcf = os.path.basename(vcf_path).split('.vcf')[0] + ".normalized.vcf.gz" % locals()
+        #        job.add(("vt decompose -s IN:%(vcf_path)s | "
+        #                 "vt normalize -r IN:%(reference_genome)s - | "
+        #                 "bgzip -c > OUT:%(tmp_dir)s/%(normalized_vcf)s") % locals())
+        #        job.add("tabix IN:%(tmp_dir)s/%(normalized_vcf)s" % locals(), output_filenames=["%(tmp_dir)s/%(normalized_vcf)s.tbi" % locals()])
+        #        job.add(("python -u IN:%(script_name)s -i IN:%(tmp_dir)s/clinvar_alleles.%(fsuffix)s.tsv.gz %(vcf_arg)s IN:%(tmp_dir)s/%(normalized_vcf)s | "
+        #                 "bgzip -c > OUT:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz") % locals())
+        #        job.add("tabix -S 1 -s 1 -b 2 -e 2 IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz" % locals(), output_filenames=["%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz.tbi" % locals()])
+        #        job.add("cp IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz.tbi %(output_dir)s/" % locals(), output_filenames=[
+        #            "%(output_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz" % locals(),
+        #            "%(output_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz.tbi" % locals()])
+		#
+        #        job.add("gunzip -c IN:%(tmp_dir)s/clinvar_alleles_with_%(label)s.%(fsuffix)s.tsv.gz | head -n 750 > OUT:%(output_dir)s/clinvar_alleles_with_%(label)s_example_750_rows.%(fsuffix)s.tsv" % locals())
 
         job.add(
             "python clinvar_alleles_stats.py "
