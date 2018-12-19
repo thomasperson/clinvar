@@ -1,14 +1,8 @@
-### ClinVar
+FORK or
 
-#### DEPRECATED: this code is out of date and no longer being maintained. 
+### Fork of https://github.com/macarthur-lab/clinvar 
 
-clinvar has fixed the issues that originally motivated creating this project, so we are now using the clinvar VCFs for our analyses. 
-
-clinvar VCFs can be downloaded from:
-
-- [ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/](http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/)
-- [ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/](http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/)
-
+#### This code is being updated and is currently in beta.  
 
 #### In 1 sentence
 
