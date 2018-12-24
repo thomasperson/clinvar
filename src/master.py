@@ -14,7 +14,7 @@ from distutils import spawn
 try:
     import configargparse
     import pypez
-    import pysam
+    #import pysam
     import pandas   # make sure all dependencies are installed
 except ImportError as e:
     sys.exit("ERROR: Python module not installed. %s. Please run 'pip install -r requirements.txt' " % e)

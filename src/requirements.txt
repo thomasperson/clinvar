@@ -1,4 +1,2 @@
 pandas
-pypez
-pysam
 configargparse
