@@ -50,10 +50,8 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 
 	# variation -> rcv (one to many)
 
-	dir_path = os.path.dirname(os.path.realpath(__file__))
-
-	single_out_file=open(dest+"./clinvar_table_raw.single."+genome_build+".tsv",'w')
-	multi_out_file= open(dest+"./clinvar_table_raw.multi."+ genome_build+".tsv",'w')
+	single_out_file=open(dest+"clinvar_table_raw.single."+genome_build+".tsv",'w')
+	multi_out_file= open(dest+"clinvar_table_raw.multi."+ genome_build+".tsv",'w')
 
 	single_out_file.write(('\t'.join(HEADER) + '\n').encode('utf-8'))
 	multi_out_file.write(('\t'.join(HEADER) + '\n').encode('utf-8'))
