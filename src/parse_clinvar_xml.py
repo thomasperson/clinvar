@@ -323,8 +323,7 @@ def get_handle(path):
         handle = open(path)
     return handle
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Extract PMIDs from the ClinVar XML dump')
     parser.add_argument('-g', '--genome-build', choices=['GRCh37', 'GRCh38'],
                         help='Genome version (either GRCh37 or GRCh38)', required=True)
@@ -335,8 +334,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if args.multi is not None:
-        f = open(args.multi, 'w')
+        f = open(args.multi, 'w')   #WTF?!?!  why is this here?
         parse_clinvar_tree(get_handle(args.xml_path), dest=args.out, multi=f, genome_build=args.genome_build)
         f.close()
     else:
         parse_clinvar_tree(get_handle(args.xml_path), dest=args.out, genome_build=args.genome_build)
+
+
+
+if __name__ == '__main__':
+    main()

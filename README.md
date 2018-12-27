@@ -1,4 +1,4 @@
-### Fork of https://github.com/macarthur-lab/clinvar 
+### Fork of https://github.com/macarthur-lab/clinvar
 
 #### This code is being updated and is currently in beta with the goal to simplify and streamline code, and execution.  
 
@@ -50,7 +50,7 @@ To create a flat representation of ClinVar suited for our purposes, we took seve
 
 &dagger;Because a ClinVar record may contain multiple assertions of Clinical Significance, we defined the following additional columns to represent the clinical significances(https://www.ncbi.nlm.nih.gov/clinvar/docs/clinsig):
 
-+ `pathogenic`,`likely_pathogenic`,`uncertain_significance`,`likely_benign` and `benign` are the counts of submissions reported the variants as "Pathogenic","Likely pathogenic","Uncertain significance","Likely benign" and "Benign" respectively. 
++ `pathogenic`,`likely_pathogenic`,`uncertain_significance`,`likely_benign` and `benign` are the counts of submissions reported the variants as "Pathogenic","Likely pathogenic","Uncertain significance","Likely benign" and "Benign" respectively.
 + `conflicted` is `1` if the variant is reported as "Conflicting interpretation of pathogenicity" or "conflicting data from submitters".
 
 #### Usage
@@ -58,19 +58,19 @@ To create a flat representation of ClinVar suited for our purposes, we took seve
 The pipeline scripts expect the following programs to be available on your system (and in your `$PATH`):
 
 wget
-python2.7
-[tabix](http://genometoolbox.blogspot.com/2013/11/installing-tabix-on-unix.html)
+python
+[tabix](http://www.htslib.org/download/)
 [vt](https://github.com/atks/vt)
+[VCFtools](https://vcftools.github.io/)
 
 To run the pipeline:
 
 ```
-cd ./src
 pip install --user --upgrade -r requirements.txt
-python2.7 master.py --b37-genome /path/to/b37.fa --b38-genome /path/to/b38.fa -E /path/to/ExAC.r1.sites.vep.vcf.gz -GG /path/to/gnomad.genomes.r2.0.1.sites.coding.autosomes_and_X.vcf.gz -GE /path/to/gnomad.exomes.r2.0.1.sites.vcf.gz
+python run_clinvar_parse.py --b38-genome /path/to/b38.fa
 ```
 
-See `python master.py -h` for additional options.
+See `python run_clinvar_parse.py -h` for additional options.
 
 Additional helper scripts are available for users to use check the processing results:
 [src/grab_interesting_variations.py](src/grab_interesting_variations.py) to extract the raw xml entry given a list of ClinVar variation IDs.
