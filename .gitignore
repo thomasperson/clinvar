@@ -27,6 +27,7 @@ variant_summary.txt.gz
 *.tsv*
 *.vcf*
 output_tmp/
+output_o/
 tmp/
 
 ### MacOS ###

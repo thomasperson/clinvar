@@ -6,15 +6,21 @@ Run with -h to see all options.
 """
 
 
-from datetime import datetime
-import ftplib
 import os
 import sys
 from distutils import spawn
-import urllib
+
+import shutil
 sys.path.insert(0, 'src'+os.sep)
 
 import parse_clinvar_xml as pcx
+
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen
 
 try:
 	import configargparse
@@ -31,6 +37,19 @@ def checkExists(fileAndPath):
 		return True
 	else:
 		return False
+
+def download_file(url,local_filename):
+	response = urlopen(url)
+
+	#r = requests.get(url, stream=True)
+	local_file=open(local_filename, 'wb')
+	local_file.write(response.read())
+
+	#for chunk in r.iter_content(chunk_size=1024):
+	#	if chunk:
+	#		f.write(chunk)
+	local_file.close()
+	return
 
 def parseArguments():
 	dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -50,6 +69,12 @@ def parseArguments():
 	return p.parse_args()
 
 def main():
+
+	normalize_py="https://raw.githubusercontent.com/ericminikel/minimal_representation/master/normalize.py"
+	clinvar_xml="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
+	clinvar_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
+
+
 	cli_args=parseArguments()
 	print(cli_args)
 
@@ -61,37 +86,45 @@ def main():
 		if cli_args.b38fasta is not None and not checkExists(cli_args.b38fasta):
 			sys.exit("Genome reference: file not found:\t"+cli_args.b38fasta)
 
-	if not os.path.exists(cli_args.output_tmp):
+	if cli_args.download_new:
+		shutil.rmtree(cli_args.output_tmp)
+		os.makedirs(cli_args.output_tmp)
+
+	elif not os.path.exists(cli_args.output_tmp):
+
 		os.makedirs(cli_args.output_tmp)
 
 
 
 	if cli_args.download_new:
 		print("Downloading normalize.py")
-		urllib.urlretrieve("https://raw.githubusercontent.com/ericminikel/minimal_representation/master/normalize.py", "src"+os.sep+"normalize.py")
+		download_file(normalize_py, "src"+os.sep+"normalize.py")
 		print("Downloading normalize.py complete")
-		print("Downloading ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz")
-		urllib.urlretrieve("ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz", cli_args.output_tmp+"ClinVar.xml.gz")
-		print("Downloading ClinVarFullRelease_00-latest.xml.gz complete")
-		print("Downloading ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz")
-		urllib.urlretrieve("ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz", cli_args.output_tmp+"ClinVar.tsv.gz")
+
+		print("Downloading "+  clinvar_xml)
+		download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
+		print("Downloading of ClinVarFullRelease_00-latest.xml.gz complete")
+
+		print("Downloading " + clinvar_tsv)
+		download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
 		print("Downloading variant_summary.txt.gz complete")
 
 	else:
-
 		if cli_args.xml_file is not None and not checkExists(cli_args.xml_file):
 			print("No ClinVar XML file specified or specified file does not exist.  Downloading latest ClinVar XML file to use")
-			urllib.urlretrieve("ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz", cli_args.output_tmp+"ClinVar.xml.gz")
+			download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
 			print("Downloading ClinVarFullRelease_00-latest.xml.gz complete")
 
 		if cli_args.tsv_file is not None and not checkExists(cli_args.tsv_file):
 			print("No ClinVar TSV file specified or specified file does not exist.  Downloading latest ClinVar TSV file to use")
-			urllib.urlretrieve("ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz", cli_args.output_tmp+"ClinVar.tsv.gz")
+			download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
 			print("Downloading variant_summary.txt.gz complete")
 
-	if not checkExists("src"+os.sep+"normalize.py"):
-		#os.system("wget -O src"+os.sep+"normalize.py https://raw.githubusercontent.com/ericminikel/minimal_representation/master/normalize.py")
-		urllib.urlretrieve("https://raw.githubusercontent.com/ericminikel/minimal_representation/master/normalize.py", "src"+os.sep+"normalize.py")
+		if not checkExists("src"+os.sep+"normalize.py"):
+			print("Downloading normalize.py")
+			download_file(normalize_py, "src"+os.sep+"normalize.py")
+			print("Downloading normalize.py complete")
+
 
 	############TODO!!!!!!  Currntly only does one genome build at a time.  Can multiprocess, but should run both at same time so file doesn't have to be parsed twice!!!  Just select which you want to output!
 

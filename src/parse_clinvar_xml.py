@@ -50,8 +50,8 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 
 	# variation -> rcv (one to many)
 
-	single_out_file=open(dest+"clinvar_table_raw.single."+genome_build+".tsv",'w')
-	multi_out_file= open(dest+"clinvar_table_raw.multi."+ genome_build+".tsv",'w')
+	single_out_file=open(dest+"clinvar_table_raw.single."+genome_build+".tsv",'wb')
+	multi_out_file= open(dest+"clinvar_table_raw.multi."+ genome_build+".tsv",'wb')
 
 	single_out_file.write(('\t'.join(HEADER) + '\n').encode('utf-8'))
 	multi_out_file.write(('\t'.join(HEADER) + '\n').encode('utf-8'))
@@ -130,7 +130,7 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 		# now find any/all submitters
 		submitters_ordered = []
 		for submitter_node in elem.findall('.//ClinVarSubmissionID'):
-			if submitter_node.attrib is not None and submitter_node.attrib.has_key('submitter'):
+			if submitter_node.attrib is not None and 'submitter' in submitter_node.attrib:
 				submitters_ordered.append(submitter_node.attrib['submitter'].replace(';', ','))
 
 		# all_submitters will get deduplicated while submitters_ordered won't
