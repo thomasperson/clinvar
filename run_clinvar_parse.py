@@ -29,8 +29,13 @@ try:
 	import pandas   # make sure all dependencies are installed
 except ImportError as e:
 	sys.exit("ERROR: Python module not installed. %s. Please run 'pip install -r requirements.txt' " % e)
-for executable in ['wget', 'tabix', 'vt', 'bgzip']:  #working on pure python implementation to remove need for these *nix based programs
+for executable in ['wget', 'tabix', 'vt', 'bgzip']:  #NOTE:working on pure python implementation to remove need for these *nix based programs
 	assert spawn.find_executable(executable), "Command %s not found, see README" % executable
+
+try:
+	import pysam
+except ImportError as e:
+	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access.  Maybe can pull out just that portion?
 
 
 def rreplace(s, old, new):
@@ -54,6 +59,8 @@ def sortRawTextFile(unSortedFile):
 		if header==0:
 			sorted_file.write(line)
 			header+=1
+		elif line.strip()=="":
+			continue
 		else:
 			file_lines.append([x.strip() for x in line.split('\t')])
 	to_sort.close()
@@ -86,7 +93,6 @@ def parseArguments():
 	g.add("--tmp-dir", default=dir_path+os.sep+"output_tmp"+os.sep, help="Temporary output direcotry for temp files ", dest="output_tmp", type=str)
 	g.add("--rm-temp", default=True, help="Removes tempoary directories and temp files when finished.  Setting flag will cause temp files to not be removed.")
 
-
 	return p.parse_args()
 
 def main():
@@ -110,7 +116,7 @@ def main():
 
 		os.makedirs(cli_args.output_tmp)
 
-	normalize_py="https://raw.githubusercontent.com/ericminikel/minimal_representation/master/normalize.py"
+	normalize_py="https://raw.githubusercontent.com/thomasperson/minimal_representation/master/normalize.py"
 	clinvar_xml="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
 	clinvar_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
 
@@ -149,11 +155,17 @@ def main():
 	if cli_args.b37fasta is not None:
 		if not checkExists(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv") or cli_args.download_new:
 			pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh37')   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
+			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv")
+			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.tsv")
 	if cli_args.b38fasta is not None:
 		if not checkExists(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv") or cli_args.download_new:
 			pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
-	sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv")
-	sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv")
+			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv")
+			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv")
+
+
+
+
 	return
 
 
