@@ -14,6 +14,7 @@ from distutils.dir_util import mkpath
 import shutil
 import operator
 
+
 sys.path.insert(0, 'src'+os.sep)
 
 import parse_clinvar_xml as pcx
@@ -38,6 +39,7 @@ for executable in ['wget', 'tabix', 'vt', 'bgzip']:  #NOTE:working on pure pytho
 NORMALIZE=False
 try:
 	import pysam
+	import normalize
 	NORMALIZE=True
 except ImportError as e:
 	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access.  Maybe I can pull out just that portion or reimplement or find another python module.
@@ -79,12 +81,12 @@ def downloadClinVarFiles(cli_args):
 		print("Downloading variant_summary.txt.gz complete")
 
 	else:
-		if cli_args.xml_file is not None and not checkExists(cli_args.xml_file):
+		if not checkExists(cli_args.xml_file):
 			print("No ClinVar XML file specified or specified file does not exist.  Downloading latest ClinVar XML file to use")
 			download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
 			print("Downloading ClinVarFullRelease_00-latest.xml.gz complete")
 
-		if cli_args.tsv_file is not None and not checkExists(cli_args.tsv_file):
+		if not checkExists(cli_args.tsv_file):
 			print("No ClinVar TSV file specified or specified file does not exist.  Downloading latest ClinVar TSV file to use")
 			download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
 			print("Downloading variant_summary.txt.gz complete")
@@ -140,8 +142,8 @@ def parseArguments():
 	g.add("--b38-genome", help="GRCh38 .fa genome reference file. NOTE: chromosome names must be like '1', '2'.. 'X', 'Y', 'MT'.", default=None, required=False, dest="b38fasta", type=str)  ##REQUIRED for normalization, but normalization not requried to run script!
 	g.add("-X", "--clinvar-xml", help="The local filename of the ClinVarFullRelase.xml.gz file. If not set, grab the latest from NCBI.", dest="xml_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.xml.gz", type=str)
 	g.add("-S", "--clinvar-variant-summary-table", help="The local filename of the variant_summary.txt.gz file. If not set, grab the latest from NCBI.", dest="tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.tsv.gz", type=str)
-	g.add("-N", help='Download all New.  Causes ouput_tmp to be removed and recreated and latest ClinVar Files to be downloaded ', action='store_true', default=False, dest="download_new")
-	g.add("--output-prefix", default="clinvar_alleles", help="Final output files will have this prefix", type=str, dest='output_prefix')  #../output/ is directory not a prefix.
+	g.add("-N", "--new", help='Download all New.  Causes ouput_tmp to be removed and recreated and latest ClinVar Files to be downloaded', action='store_true', default=False, dest="download_new")
+	g.add("--output-prefix", default="clinvar_alleles", help="Final output files will have this prefix", type=str, dest='output_prefix',default="")
 	g.add("--output-dir", default=dir_path+os.sep+"output"+os.sep, help="Final output files will be located here", type=str, dest='output_dir')  #../output/ is directory not a prefix.
 	g.add("--tmp-dir", default=dir_path+os.sep+"output_tmp"+os.sep, help="Temporary output direcotry for temp files ", dest="output_tmp", type=str)
 	g.add("--rm-temp", default=True, help="Removes tempoary directories and temp files when finished.  Setting flag will cause temp files to NOT be removed. ")
@@ -154,9 +156,9 @@ def main():
 	print(cli_args)
 
 	if cli_args.b37fasta is None and cli_args.b38fasta is None:
-		print("Genome reference files are required to run normalization.  Normalization will be skipped")
+		print("Genome reference files are required for normalization.  Normalization will be skipped.")
 		NORMALIZE=False
-	else:
+	else:   ####TODO: AUTOMATIC FASTA DOWNLOAD?
 		if cli_args.b37fasta is not None and not checkExists(cli_args.b37fasta):
 			sys.exit("Genome reference: file not found:\t"+cli_args.b37fasta)
 		if cli_args.b38fasta is not None and not checkExists(cli_args.b38fasta):
@@ -176,17 +178,34 @@ def main():
 	###		SO, Will run normalize later or not at all as only being sorted is what is required for group_by_allele.  MIGHT end up required after checking missing.
 	### 	ALSO means fasta file NOT REQUIRED!
 
+	####NOTE Multi essentially done after parse and sort...  Grouping by allele doens't make much sense when you have different sites, spot check manual review seems like lots of spam too.  Need a new grouping stratagy for multi.
+	####QUESTION: How many Multi show up only in multi and havie higher/lower stars?
+	####NOTE gonna normalize or not multi and call done.
+	####NOTE There are missing variants from the multi.
+	####NOTE Multi stars are comming from tsv so a bit screwy, with indiviaul aleles contributing more.  Doubtful can get a correct star unless in xml.
+
+
 	if cli_args.b37fasta is not None:
 		pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh37')   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv")
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.tsv")
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.sorted.tsv")
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.sorted.tsv")
+		if NORMALIZE:
+
+		else:
+			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.sorted.tsv",cli_args.output_dir+"GRCh37"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh37.tsv")
 		gba.group_by_allele(cli_args.output_tmp+"sorted.clinvar_table_raw.single.GRCh37.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
 
 	if cli_args.b38fasta is not None:
 		#pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
 		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv")
 		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv")
+		if NORMALIZE:
+
+		else:
+			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv")
 		gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
+
+
 
 
 
