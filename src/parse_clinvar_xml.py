@@ -43,7 +43,7 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 		genome_build: Either 'GRCh37' or 'GRCh38'
 	"""
 
-	xml_file = get_handle(xml_path)
+	xml_file = get_read_file_handle(xml_path)
 
 	verbose=True,
 
@@ -328,11 +328,11 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 	return
 
 
-def get_handle(path):   #Are files being closed when done with?!?!?!?
+def get_read_file_handle(path):   #Are files being closed when done with?!?!?!?
 	if path[-3:] == '.gz':
-		handle = gzip.open(path)
+		handle = gzip.open(path,'rb')
 	else:
-		handle = open(path)
+		handle = open(path, 'r')
 	return handle
 
 def main():

@@ -10,12 +10,14 @@ Run with -h to see all options.
 import os
 import sys
 from distutils import spawn
+from distutils.dir_util import mkpath
 import shutil
 import operator
 
 sys.path.insert(0, 'src'+os.sep)
 
 import parse_clinvar_xml as pcx
+import group_by_allele as gba
 
 try:
 	# For Python 3.0 and later
@@ -29,19 +31,20 @@ try:
 	import pandas   # make sure all dependencies are installed
 except ImportError as e:
 	sys.exit("ERROR: Python module not installed. %s. Please run 'pip install -r requirements.txt' " % e)
+
 for executable in ['wget', 'tabix', 'vt', 'bgzip']:  #NOTE:working on pure python implementation to remove need for these *nix based programs
 	assert spawn.find_executable(executable), "Command %s not found, see README" % executable
 
+NORMALIZE=False
 try:
 	import pysam
+	NORMALIZE=True
 except ImportError as e:
-	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access.  Maybe can pull out just that portion?
-
+	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access.  Maybe I can pull out just that portion or reimplement or find another python module.
 
 def rreplace(s, old, new):
 	li = s.rsplit(old, 1) #Split only once
 	return new.join(li)
-
 
 def checkExists(fileAndPath):
 	exists = os.path.isfile(fileAndPath)
@@ -50,28 +53,6 @@ def checkExists(fileAndPath):
 	else:
 		return False
 
-def sortRawTextFile(unSortedFile):
-	to_sort=open(unSortedFile,'r')
-	sorted_file=open(rreplace(unSortedFile,".",".sorted."),'wb')
-	header=0
-	file_lines=[]
-	for line in to_sort:
-		if header==0:
-			sorted_file.write(line)
-			header+=1
-		elif line.strip()=="":
-			continue
-		else:
-			file_lines.append([x.strip() for x in line.split('\t')])
-	to_sort.close()
-
-	for line in sorted(file_lines, key=operator.itemgetter(8)):
-		sorted_file.write("\t".join(line)+"\n")
-
-	sorted_file.close()
-	return rreplace(unSortedFile,".",".sorted.")
-
-
 def download_file(url,local_filename):
 	response = urlopen(url)
 	local_file=open(local_filename, 'wb')
@@ -79,43 +60,7 @@ def download_file(url,local_filename):
 	local_file.close()
 	return
 
-def parseArguments():
-	dir_path = os.path.dirname(os.path.realpath(__file__))
-	p = configargparse.getArgParser()
-	g = p.add_argument_group('main args')
-	g.add("--b37-genome", help="GRCh37 .fa genome reference file", default=None, required=False, dest="b37fasta", type=str)
-	g.add("--b38-genome", help="GRCh38 .fa genome reference file. NOTE: chromosome names must be like '1', '2'.. 'X', 'Y', 'MT'.", default=None, required=False, dest="b38fasta", type=str)
-	g.add("-X", "--clinvar-xml", help="The local filename of the ClinVarFullRelase.xml.gz file. If not set, grab the latest from NCBI.", dest="xml_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.xml.gz", type=str)
-	g.add("-S", "--clinvar-variant-summary-table", help="The local filename of the variant_summary.txt.gz file. If not set, grab the latest from NCBI.", dest="tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.tsv.gz", type=str)
-	g.add("-N", help='Download Latest ClinVar Files to default location and run pipeline', action='store_true', default=False, dest="download_new")
-	g.add("--output-prefix", default="clinvar_alleles", help="Final output files will have this prefix", type=str, dest='output_prefix')  #../output/ is directory not a prefix.
-	g.add("--output-dir", default=dir_path+os.sep+"output"+os.sep, help="Final output files will be located here", type=str, dest='output_dir')  #../output/ is directory not a prefix.
-	g.add("--tmp-dir", default=dir_path+os.sep+"output_tmp"+os.sep, help="Temporary output direcotry for temp files ", dest="output_tmp", type=str)
-	g.add("--rm-temp", default=True, help="Removes tempoary directories and temp files when finished.  Setting flag will cause temp files to not be removed.")
-
-	return p.parse_args()
-
-def main():
-
-	cli_args=parseArguments()
-	print(cli_args)
-
-	if cli_args.b37fasta is None and cli_args.b38fasta is None:
-		sys.exit("At least one genome reference file is required")
-	else:
-		if cli_args.b37fasta is not None and not checkExists(cli_args.b37fasta):
-			sys.exit("Genome reference: file not found:\t"+cli_args.b37fasta)
-		if cli_args.b38fasta is not None and not checkExists(cli_args.b38fasta):
-			sys.exit("Genome reference: file not found:\t"+cli_args.b38fasta)
-
-	if cli_args.download_new:
-		shutil.rmtree(cli_args.output_tmp)
-		os.makedirs(cli_args.output_tmp)
-
-	elif not os.path.exists(cli_args.output_tmp):
-
-		os.makedirs(cli_args.output_tmp)
-
+def downloadClinVarFiles(cli_args):
 	normalize_py="https://raw.githubusercontent.com/thomasperson/minimal_representation/master/normalize.py"
 	clinvar_xml="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
 	clinvar_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
@@ -148,20 +93,100 @@ def main():
 			print("Downloading normalize.py")
 			download_file(normalize_py, "src"+os.sep+"normalize.py")
 			print("Downloading normalize.py complete")
+	return
+
+def sortRawTextFile(unSortedFile, sortedFile):
+	to_sort=open(unSortedFile,'r')
+	sorted_file=open(sortedFile,'w')
+	header=0
+	file_lines=[]
+	for line in to_sort:
+		if header==0:
+			sorted_file.write(line)
+			header+=1
+		elif line.strip()=="":
+			continue
+		else:
+			file_lines.append([x.strip() for x in line.split('\t')])
+	to_sort.close()
+
+	for line in sorted(file_lines, key=operator.itemgetter(8)):
+		sorted_file.write("\t".join(line)+"\n")
+
+	sorted_file.close()
+	return
+
+def createDirectories(cli_args):
+
+	if cli_args.download_new:
+		shutil.rmtree(cli_args.output_tmp)
+
+	mkpath(cli_args.output_tmp)
+
+	if cli_args.b38fasta is not None:
+		mkpath(cli_args.output_dir+os.sep+"GRCh38"+os.sep+"multi")
+		mkpath(cli_args.output_dir+os.sep+"GRCh38"+os.sep+"single")
+	if cli_args.b37fasta is not None:
+		mkpath(cli_args.output_dir+os.sep+"GRCh37"+os.sep+"multi")
+		mkpath(cli_args.output_dir+os.sep+"GRCh37"+os.sep+"single")
+
+	return
+
+def parseArguments():
+	dir_path = os.path.dirname(os.path.realpath(__file__))
+	p = configargparse.getArgParser()
+	g = p.add_argument_group('main args')
+	g.add("--b37-genome", help="GRCh37 .fa genome reference file", default=None, required=False, dest="b37fasta", type=str)   ##REQUIRED for normalization, but normalization not requried to run script!
+	g.add("--b38-genome", help="GRCh38 .fa genome reference file. NOTE: chromosome names must be like '1', '2'.. 'X', 'Y', 'MT'.", default=None, required=False, dest="b38fasta", type=str)  ##REQUIRED for normalization, but normalization not requried to run script!
+	g.add("-X", "--clinvar-xml", help="The local filename of the ClinVarFullRelase.xml.gz file. If not set, grab the latest from NCBI.", dest="xml_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.xml.gz", type=str)
+	g.add("-S", "--clinvar-variant-summary-table", help="The local filename of the variant_summary.txt.gz file. If not set, grab the latest from NCBI.", dest="tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.tsv.gz", type=str)
+	g.add("-N", help='Download all New.  Causes ouput_tmp to be removed and recreated and latest ClinVar Files to be downloaded ', action='store_true', default=False, dest="download_new")
+	g.add("--output-prefix", default="clinvar_alleles", help="Final output files will have this prefix", type=str, dest='output_prefix')  #../output/ is directory not a prefix.
+	g.add("--output-dir", default=dir_path+os.sep+"output"+os.sep, help="Final output files will be located here", type=str, dest='output_dir')  #../output/ is directory not a prefix.
+	g.add("--tmp-dir", default=dir_path+os.sep+"output_tmp"+os.sep, help="Temporary output direcotry for temp files ", dest="output_tmp", type=str)
+	g.add("--rm-temp", default=True, help="Removes tempoary directories and temp files when finished.  Setting flag will cause temp files to NOT be removed. ")
+
+	return p.parse_args()
+
+def main():
+
+	cli_args=parseArguments()
+	print(cli_args)
+
+	if cli_args.b37fasta is None and cli_args.b38fasta is None:
+		print("Genome reference files are required to run normalization.  Normalization will be skipped")
+		NORMALIZE=False
+	else:
+		if cli_args.b37fasta is not None and not checkExists(cli_args.b37fasta):
+			sys.exit("Genome reference: file not found:\t"+cli_args.b37fasta)
+		if cli_args.b38fasta is not None and not checkExists(cli_args.b38fasta):
+			sys.exit("Genome reference: file not found:\t"+cli_args.b38fasta)
+
+	#creates temp and outupt directories
+	createDirectories(cli_args)
+
+	#downloads clinvar and normalize_py
+	downloadClinVarFiles(cli_args)
 
 
-	############TODO!!!!!!  Currntly only does one genome build at a time.  Can multiprocess, but should run both at same time so file doesn't have to be parsed twice!!!  Just select which you want to output!
+	############TODO!!!!!!  Currntly only does one genome build at a time.  Can multiprocess, but should run both at same time so file doesn't have to be parsed twice,
+	###						 if you want both!!!  Just select which you want to output!
+
+	###NOTE  cut -f 9 clinvar_table_raw.single.GRCh38.sorted.tsv | sort -u | wc -l == cut -f 1-4 clinvar_table_raw.single.GRCh38.sorted.tsv | sort -u | wc -l
+	###		SO, Will run normalize later or not at all as only being sorted is what is required for group_by_allele.  MIGHT end up required after checking missing.
+	### 	ALSO means fasta file NOT REQUIRED!
 
 	if cli_args.b37fasta is not None:
-		if not checkExists(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv") or cli_args.download_new:
-			pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh37')   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
-			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv")
-			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.tsv")
+		pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh37')   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv")
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.tsv")
+		gba.group_by_allele(cli_args.output_tmp+"sorted.clinvar_table_raw.single.GRCh37.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
+
 	if cli_args.b38fasta is not None:
-		if not checkExists(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv") or cli_args.download_new:
-			pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
-			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv")
-			sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv")
+		#pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv")
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv")
+		gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
 
 
 
