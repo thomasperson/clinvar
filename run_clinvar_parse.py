@@ -33,7 +33,7 @@ try:
 except ImportError as e:
 	sys.exit("ERROR: Python module not installed. %s. Please run 'pip install -r requirements.txt' " % e)
 
-for executable in ['tabix', 'vt', 'bgzip']:  #NOTE:working on pure python implementation to remove need for these *nix based programs
+for executable in ['tabix', 'bgzip']:  #NOTE:working on pure python implementation to remove need for these *nix based programs.
 	assert spawn.find_executable(executable), "Command %s not found, see README" % executable
 
 pysam_installed=False
@@ -44,9 +44,6 @@ try:
 except ImportError as e:
 	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access.  Maybe I can pull out just that portion or reimplement or find another python module.
 
-def rreplace(s, old, new):
-	li = s.rsplit(old, 1) #Split only once
-	return new.join(li)
 
 def checkExists(fileAndPath):
 	exists = os.path.isfile(fileAndPath)
@@ -63,7 +60,7 @@ def download_file(url,local_filename):
 	return
 
 def downloadClinVarFiles(cli_args):
-	normalize_py="https://raw.githubusercontent.com/thomasperson/minimal_representation/master/normalize.py"
+	normalize_py="https://raw.githubusercontent.com/thomasperson/minimal_representation/master/normalize.py"   #FORK of https://github.com/ericminikel/minimal_representation to ensure continued availability.
 	clinvar_xml="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
 	clinvar_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
 
@@ -112,7 +109,7 @@ def sortRawTextFile(unSortedFile, sortedFile):
 			file_lines.append([x.strip() for x in line.split('\t')])
 	to_sort.close()
 
-	for line in sorted(file_lines, key=operator.itemgetter(8)):
+	for line in sorted(file_lines, key=operator.itemgetter(8)):   #Sorts on variant ID rather than genomic positon.
 		sorted_file.write("\t".join(line)+"\n")
 
 	sorted_file.close()
@@ -124,13 +121,10 @@ def createDirectories(cli_args):
 		shutil.rmtree(cli_args.output_tmp)
 
 	mkpath(cli_args.output_tmp)
-
-	if cli_args.b38fasta is not None:
-		mkpath(cli_args.output_dir+os.sep+"GRCh38"+os.sep+"multi")
-		mkpath(cli_args.output_dir+os.sep+"GRCh38"+os.sep+"single")
-	if cli_args.b37fasta is not None:
-		mkpath(cli_args.output_dir+os.sep+"GRCh37"+os.sep+"multi")
-		mkpath(cli_args.output_dir+os.sep+"GRCh37"+os.sep+"single")
+	mkpath(cli_args.output_dir+os.sep+"GRCh38"+os.sep+"multi")
+	mkpath(cli_args.output_dir+os.sep+"GRCh38"+os.sep+"single")
+	mkpath(cli_args.output_dir+os.sep+"GRCh37"+os.sep+"multi")
+	mkpath(cli_args.output_dir+os.sep+"GRCh37"+os.sep+"single")
 
 	return
 
@@ -196,6 +190,7 @@ def main():
 		else:
 			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.sorted.tsv",cli_args.output_dir+"GRCh37"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh37.tsv")
 		gba.group_by_allele(cli_args.output_tmp+"sorted.clinvar_table_raw.single.GRCh37.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv")
+		join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv", "GRCh37",cli_args.output_dir+"GRCh37"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv")
 
 	if cli_args.b38fasta is not None:
 		#pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
@@ -208,6 +203,7 @@ def main():
 		else:
 			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv")
 		gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
+		join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv", "GRCh38",cli_args.output_dir+"GRCh37"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv")
 
 
 
