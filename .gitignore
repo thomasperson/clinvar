@@ -1,7 +1,3 @@
-### Intellij IDE ###
-.idea/
-*.iml
-
 ### Python files ###
 src/*.pyc
 __pycache__/
@@ -11,11 +7,6 @@ src/__pycache__/
 # normalize.py is retrieved from another repo
 src/normalize.py
 normalize.py
-
-### R files ###
-src/.RData
-src/.Rhistory
-src/last.dump.rda
 
 ### Heavy Data Files ###
 src/pipeline_output
@@ -27,7 +18,9 @@ variant_summary.txt.gz
 *.tsv*
 *.vcf*
 output_tmp/
+output_tmp_TEST/
 output_o/
+output_TEST/
 tmp/
 
 ### MacOS ###

@@ -15,7 +15,7 @@ import os
 mentions_pubmed_regex = '(?:PubMed|PMID)(.*)'  # group(1) will be all the text after the word PubMed or PMID
 extract_pubmed_id_regex = '[^0-9]+([0-9]+)[^0-9](.*)'  # group(1) will be the first PubMed ID, group(2) will be all remaining text
 
-HEADER = ['chrom', 'pos', 'ref', 'alt', 'start', 'stop', 'strand', 'variation_type', 'variation_id', 'rcv', 'scv',
+header = ['chrom', 'pos', 'ref', 'alt', 'start', 'stop', 'strand', 'variation_type', 'variation_id', 'rcv', 'scv',
 		  'allele_id', 'symbol',
 		  'hgvs_c', 'hgvs_p', 'molecular_consequence',
 		  'clinical_significance', 'clinical_significance_ordered', 'pathogenic', 'likely_pathogenic',
@@ -24,6 +24,16 @@ HEADER = ['chrom', 'pos', 'ref', 'alt', 'start', 'stop', 'strand', 'variation_ty
 		  'last_evaluated', 'all_submitters', 'submitters_ordered', 'all_traits',
 		  'all_pmids', 'inheritance_modes', 'age_of_onset', 'prevalence',
 		  'disease_mechanism', 'origin', 'xrefs', 'dates_ordered']
+
+HEADER = ['CHROM', 'POS', 'REF', 'ALT', 'START', 'STOP', 'STRAND', 'VARIATION_TYPE', 'VARIATION_ID', 'RCV', 'SCV',
+		  'ALLELE_ID', 'SYMBOL',
+		  'HGVS_C', 'HGVS_P', 'MOLECULAR_CONSEQUENCE',
+		  'CLINICAL_SIGNIFICANCE', 'CLINICAL_SIGNIFICANCE_ORDERED', 'PATHOGENIC', 'LIKELY_PATHOGENIC',
+		  'UNCERTAIN_SIGNIFICANCE',
+		  'LIKELY_BENIGN', 'BENIGN', 'REVIEW_STATUS', 'REVIEW_STATUS_ORDERED',
+		  'LAST_EVALUATED', 'ALL_SUBMITTERS', 'SUBMITTERS_ORDERED', 'ALL_TRAITS',
+		  'ALL_PMIDS', 'INHERITANCE_MODES', 'AGE_OF_ONSET', 'PREVALANCE',
+		  'DISEASE_MECHANISM', 'ORIGIN', 'XREFS', 'DATES_ORDERED']
 
 
 def replace_semicolons(s, replace_with=":"):
@@ -65,24 +75,27 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 
 		# initialize all the fields
 		current_row = {}
-		current_row['rcv'] = ''
-		current_row['variation_type'] = ''
-		current_row['variation_id'] = ''
-		current_row['allele_id'] = ''
+		for key in HEADER:
+			current_row[key] = ''
+		for list_column in ('INHERITANCE_MODES', 'AGE_OF_ONSET', 'PREVALANCE', 'DISEASE_MECHANISM', 'XREFS', 'MOLECULAR_CONSEQUENCE', 'ORIGIN'):
+			current_row[list_column] = set()
+		for list_column in ('REVIEW_STATUS', 'CLINICALSIGNIFICANCE'):
+			current_row[list_column] = []
+
 
 		rcv = elem.find('./ReferenceClinVarAssertion/ClinVarAccession')
 		if rcv.attrib.get('Type') != 'RCV':
 			print("Error, not RCV record")
 			break
 		else:
-			current_row['rcv'] = rcv.attrib.get('Acc')
+			current_row['RCV'] = rcv.attrib.get('Acc')
 
 		ReferenceClinVarAssertion = elem.findall(".//ReferenceClinVarAssertion")
 		measureset = ReferenceClinVarAssertion[0].findall(".//MeasureSet")
 
 		# only the ones with just one measure set can be recorded
 		if len(measureset) > 1:
-			print("A submission has more than one measure set." + elem.find('./Title').text)
+			print("A submission has more than one measure set." + elem.find('./Title').text)    #NOTE Some of these look to be compound heterozygote haplotypes, and probably shouldn't be skipped!  
 			elem.clear()
 			continue
 		elif len(measureset) == 0:
@@ -94,8 +107,8 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 
 		measure = measureset.findall('.//Measure')
 
-		current_row['variation_id'] = measureset.attrib.get('ID')
-		current_row['variation_type'] = measureset.get('Type')
+		current_row['VARIATION_ID'] = measureset.attrib.get('ID')
+		current_row['VARIATION_TYPE'] = measureset.get('Type')
 
 		# find all scv accession number
 		scv_number = []
@@ -103,7 +116,7 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 			if scv.attrib.get('Type') == "SCV":
 				scv_number.append(scv.attrib.get('Acc'))
 
-		current_row['scv'] = ';'.join(set(scv_number))
+		current_row['SCV'] = ';'.join(set(scv_number))
 
 		# find all the Citation nodes, and get the PMIDs out of them
 		pmids = []
@@ -125,7 +138,7 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 						if pubmed_id_extraction.group(2) is not None:
 							remaining_text = pubmed_id_extraction.group(2)
 
-		current_row['all_pmids'] = ';'.join(sorted(set(pmids + comment_pmids)))
+		current_row['ALL_PMIDS'] = ';'.join(sorted(set(pmids + comment_pmids)))
 
 		# now find any/all submitters
 		submitters_ordered = []
@@ -134,25 +147,24 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 				submitters_ordered.append(submitter_node.attrib['submitter'].replace(';', ','))
 
 		# all_submitters will get deduplicated while submitters_ordered won't
-		current_row['submitters_ordered'] = ';'.join(submitters_ordered)
-		current_row['all_submitters'] = ";".join(set(submitters_ordered))
+		current_row['SUBMITTERS_ORDERED'] = ';'.join(submitters_ordered)
+		current_row['ALL_SUBMITTERS'] = ";".join(set(submitters_ordered))
 
 		# find the clincial significance and review status reported in RCV(aggregated from SCV)
-		current_row['clinical_significance'] = []
-		current_row['review_status'] = []
+
 
 		clinical_significance = elem.find('.//ReferenceClinVarAssertion/ClinicalSignificance')
 		if clinical_significance.find('.//ReviewStatus') is not None:
-			current_row['review_status'] = clinical_significance.find('.//ReviewStatus').text;
+			current_row['REVIEW_STATUS'] = clinical_significance.find('.//ReviewStatus').text;
 		if clinical_significance.find('.//Description') is not None:
 			current_row['clinical_significance'] = clinical_significance.find('.//Description').text
 
-		current_row['last_evaluated'] = '0000-00-00'
+		current_row['LAST_EVALUATED'] = '0000-00-00'
 		if clinical_significance.attrib.get('DateLastEvaluated') is not None:
-			current_row['last_evaluated'] = clinical_significance.attrib.get('DateLastEvaluated', '0000-00-00')
+			current_row['LAST_EVALUATED'] = clinical_significance.attrib.get('DateLastEvaluated', '0000-00-00')
 
 		# match the order of the submitter list - edit 2/22/17
-		current_row['review_status_ordered'] = ';'.join([
+		current_row['REVIEW_STATUS_ORDERED'] = ';'.join([
 			x.text for x in elem.findall('.//ClinVarAssertion/ClinicalSignificance/ReviewStatus') if x is not None
 		])
 
@@ -160,33 +172,32 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 			x.text.lower() for x in elem.findall('.//ClinVarAssertion/ClinicalSignificance/Description') if x is not None
 		]
 
-		current_row['pathogenic'] = str(list_significance.count("pathogenic"))
-		current_row['likely_pathogenic'] = str(list_significance.count("likely pathogenic"))
-		current_row['uncertain_significance']=str(list_significance.count("uncertain significance"))
-		current_row['benign']=str(list_significance.count("benign"))
-		current_row['likely_benign']=str(list_significance.count("likely benign"))
+		current_row['PATHOGENIC'] = str(list_significance.count("pathogenic"))
+		current_row['LIKELY_PATHOGENIC'] = str(list_significance.count("likely pathogenic"))
+		current_row['UNCERTAIN_SIGNIFICANCE']=str(list_significance.count("uncertain significance"))
+		current_row['BENIGN']=str(list_significance.count("benign"))
+		current_row['LIKELY_BENIGN']=str(list_significance.count("likely benign"))
 
-		current_row['clinical_significance_ordered'] = ";".join(list_significance)
+		current_row['CLINICAL_SIGNIFICANCE_ORDERED'] = ";".join(list_significance)
 
-		current_row['dates_ordered'] = ';'.join([
+		current_row['DATES_ORDERED'] = ';'.join([
 			x.attrib.get('DateLastEvaluated', '0000-00-00')
 			for x in elem.findall('.//ClinVarAssertion/ClinicalSignificance')
 			if x is not None
 		])
 
 		# init new fields
-		for list_column in ('inheritance_modes', 'age_of_onset', 'prevalence', 'disease_mechanism', 'xrefs'):
-			current_row[list_column] = set()
+
 
 		# now find the disease(s) this variant is associated with
-		current_row['all_traits'] = []
+		current_row['ALL_TRAITS'] = []
 		for traitset in elem.findall('.//TraitSet'):
 			disease_name_nodes = traitset.findall('.//Name/ElementValue')
 			trait_values = []
 			for disease_name_node in disease_name_nodes:
 				if disease_name_node.attrib is not None and disease_name_node.attrib.get('Type') == 'Preferred':
 					trait_values.append(disease_name_node.text)
-			current_row['all_traits'] += trait_values
+			current_row['ALL_TRAITS'] += trait_values
 
 			for attribute_node in traitset.findall('.//AttributeSet/Attribute'):
 				attribute_type = attribute_node.attrib.get('Type')
@@ -195,45 +206,43 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 						' ', '_')
 					column_value = attribute_node.text.strip()
 					if column_value:
-						current_row[column_name].add(column_value)
+						current_row[column_name.upper()].add(column_value)
 
 						# put all the cross references one column, it may contains NCBI gene ID, conditions ID in disease databases.
 			for xref_node in traitset.findall('.//XRef'):
 				xref_db = xref_node.attrib.get('DB')
 				xref_id = xref_node.attrib.get('ID')
-				current_row['xrefs'].add("%s:%s" % (xref_db, xref_id))
+				current_row['XREFS'].add("%s:%s" % (xref_db, xref_id))
 
-		current_row['origin'] = set()
 		for origin in elem.findall('.//ReferenceClinVarAssertion/ObservedIn/Sample/Origin'):
-			current_row['origin'].add(origin.text)
+			current_row['ORIGIN'].add(origin.text)
 
-		for column_name in (
-				'all_traits', 'inheritance_modes', 'age_of_onset', 'prevalence', 'disease_mechanism', 'origin',
-				'xrefs'):
+		for column_name in (   #THIS BS SHOULD BE LAST.  RIGHT BEFORE OUTPUT
+				'ALL_TRAITS', 'INHERITANCE_MODES', 'AGE_OF_ONSET', 'PREVALANCE', 'DISEASE_MECHANISM', 'ORIGIN',
+				'XREFS'):
 			column_value = current_row[column_name] if type(current_row[column_name]) == list else sorted(
 				current_row[column_name])  # sort columns of type 'set' to get deterministic order
 			current_row[column_name] = remove_newlines_and_tabs(';'.join(map(replace_semicolons, column_value)))
-
 		current_row['symbol'] = ''
 		var_name = measureset.find(".//Name/ElementValue").text
 		if var_name is not None:
 			match = re.search(r"\(([A-Za-z0-9]+)\)", var_name)
 			if match is not None:
 				genesymbol = match.group(1)
-				current_row['symbol'] = genesymbol
+				current_row['SYMBOL'] = genesymbol
 
 		for i in range(len(measure)):
 
-			if current_row['symbol'] is None:
+			if current_row['SYMBOL'] is None:
 				genesymbol = measure[i].findall('.//Symbol')
 				if genesymbol is not None:
 					for symbol in genesymbol:
 						if (symbol.find('ElementValue').attrib.get('Type') == 'Preferred'):
-							current_row['symbol'] = symbol.find('ElementValue').text;
+							current_row['SYMBOL'] = symbol.find('ElementValue').text;
 							break
 
 			# find the allele ID (//Measure/@ID)
-			current_row['allele_id'] = measure[i].attrib.get('ID')
+			current_row['ALLELE_ID'] = measure[i].attrib.get('ID')
 			# find the GRCh37 or GRCh38 VCF representation
 			genomic_location = None
 
@@ -250,46 +259,48 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 				elem.clear()
 				continue  # don't bother with variants that don't have a VCF location
 
-			current_row['chrom'] = genomic_location.attrib['Chr']
-			current_row['pos'] = genomic_location.attrib['start']
-			current_row['ref'] = genomic_location.attrib['referenceAllele']
-			current_row['alt'] = genomic_location.attrib['alternateAllele']
-			current_row['start'] = genomic_location.attrib['start']
-			current_row['stop'] = genomic_location.attrib['stop']
-			current_row['strand'] = ''
+			current_row['CHROM'] = genomic_location.attrib['Chr']
+			current_row['POS'] = genomic_location.attrib['start']
+			current_row['REF'] = genomic_location.attrib['referenceAllele']
+			current_row['ALT'] = genomic_location.attrib['alternateAllele']
+			current_row['START'] = genomic_location.attrib['start']
+			current_row['STOP'] = genomic_location.attrib['stop']
+			current_row['STRAND'] = ''
 			for measure_relationship in measure[i].findall(".//MeasureRelationship"):
-				if current_row['symbol'] == measure_relationship.find(".//Symbol/ElementValue").text:
+				if current_row['SYMBOL'] == measure_relationship.find(".//Symbol/ElementValue").text:
 					for sequence_location in measure_relationship.findall(".//SequenceLocation"):
 						if 'Strand' in sequence_location.attrib and genomic_location.attrib['Accession'] == sequence_location.attrib['Accession']:
-							current_row['strand'] = sequence_location.attrib['Strand']
+							current_row['STRAND'] = sequence_location.attrib['Strand']
 							break
 
-			current_row['molecular_consequence'] = set()
-			current_row['hgvs_c'] = ''
-			current_row['hgvs_p'] = ''
 
+			current_row['MOLECULAR_CONSEQUENCE'] = set()
+			current_row['HGVS_C'] = ''
+			current_row['HGVS_P'] = ''
 			attributeset = measure[i].findall('./AttributeSet')
+			#print (current_row)
+			#print(current_row['MOLECULAR_CONSEQUENCE'])
 			for attribute_node in attributeset:
 				attribute_type = attribute_node.find('./Attribute').attrib.get('Type')
 				attribute_value = attribute_node.find('./Attribute').text;
 
 				# find hgvs_c
 				if (attribute_type == 'HGVS, coding, RefSeq' and "c." in attribute_value):
-					current_row['hgvs_c'] = attribute_value
+					current_row['HGVS_C'] = attribute_value
 
 				# find hgvs_p
 				if (attribute_type == 'HGVS, protein, RefSeq' and "p." in attribute_value):
-					current_row['hgvs_p'] = attribute_value
-
+					current_row['HGVS_P'] = attribute_value
 				# aggregate all molecular consequences
+
 				if (attribute_type == 'MolecularConsequence'):
 					for xref in attribute_node.findall('.//XRef'):
 						if xref.attrib.get('DB') == "RefSeq":
 							# print xref.attrib.get('ID'), attribute_value
-							current_row['molecular_consequence'].add(":".join([xref.attrib.get('ID'), attribute_value]))
+							current_row['MOLECULAR_CONSEQUENCE'].add(":".join([xref.attrib.get('ID'), attribute_value]))
 
-			column_name = 'molecular_consequence'
-			column_value = current_row[column_name] if type(current_row[column_name]) == list else sorted(
+			column_name = 'MOLECULAR_CONSEQUENCE'
+			column_value = current_row[column_name] if type(current_row[column_name]) == list else sorted(   #THIS BS SHOULD BE LAST.  RIGHT BEFORE OUTPUT
 				current_row[column_name])  # sort columns of type 'set' to get deterministic order
 			current_row[column_name] = remove_newlines_and_tabs(';'.join(map(replace_semicolons, column_value)))
 
@@ -300,12 +311,6 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 				if multi_out_file is not None:
 					multi_out_file.write(('\t'.join([current_row[column] for column in HEADER]) + '\n').encode('utf-8'))
 					mcounter += 1
-
-			if scounter % 100 == 0:   #will flush automaticly.  Probably in here cause was getting truncated files cause files weren't being closed?
-				single_out_file.flush()
-			if mcounter % 100 == 0:
-				if multi_out_file is not None:
-					multi_out_file.flush()
 
 			counter = scounter + mcounter
 			if verbose and counter % 100 == 0:
@@ -319,8 +324,6 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 		# done parsing the xml for this one clinvar set.
 		elem.clear()
 
-	sys.stderr.write("Done\n")
-
 	xml_file.close()
 	multi_out_file.close()
 	single_out_file.close()
@@ -328,7 +331,7 @@ def parse_clinvar_tree(xml_path, dest, genome_build):
 	return
 
 
-def get_read_file_handle(path):   #Are files being closed when done with?!?!?!?
+def get_read_file_handle(path):
 	if path[-3:] == '.gz':
 		handle = gzip.open(path,'rb')
 	else:
@@ -344,11 +347,12 @@ def main():
 	parser.add_argument('-o', '--out', type=str, required=True, help="Temp output directory of raw files", default="output_tmp")  #We are opening files multiple ways and locations.  Need to standardize this a bit... and why we going to stdout? everything else is to file.  simplify!
 
 	cli_args = parser.parse_args()
-		#f = open(args.multi, 'w')   #WTF?!?!  Why is this here!?!
 	parse_clinvar_tree(cli_args.xml_path, cli_args.output_tmp, cli_args.genome_build)
-		#f.close()
+	return
+
 
 
 
 if __name__ == '__main__':
 	main()
+	exit()

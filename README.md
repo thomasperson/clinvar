@@ -1,5 +1,3 @@
-### Fork of https://github.com/macarthur-lab/clinvar.
-
 ## This code is currently being refactored so is currently in beta.  Goal is to enable running with Python2.7.x+ and Python3.6.x+ on Windows and Linux, though some functionality may be missing from Windows.  
 ## NOTE: This Fork is not supported or authorized by the MacAurthur Lab in anyway, though I do thank them for their work building the initial framework.
 
@@ -48,9 +46,7 @@ To create a flat representation of ClinVar suited for our purposes, we took seve
 
 The pipeline scripts expect the following programs to be available on your system (and in your `$PATH`):
 
-[python](https://www.python.org/)
-[tabix](http://www.htslib.org/download/)
-[bgzip](http://www.htslib.org/download/)
+[python](https://www.python.org/), [tabix](http://www.htslib.org/download/), [bgzip](http://www.htslib.org/download/)
 
 To run the pipeline:
 
@@ -69,11 +65,11 @@ Additional helper scripts are available for users to use check the processing re
 
 #### Usage notes
 
-Because ClinVar contains a great deal of data complexity, we made a deliberate decision to *not* attempt to capture all fields in our resulting file. We made an effort to capture a subset of fields that we believed would be most useful for genome-wide filtering, and also included `variation_id` as a column to enable the user to look up additional details on the ClinVar website. For instance, the page for the variant with `variation_id` 7105 is located at [ncbi.nlm.nih.gov/clinvar/variation/7105/](http://www.ncbi.nlm.nih.gov/clinvar/variation/7105/). Note that we also do not capture all of the complexity of the fields that are included.
+Because ClinVar contains a great deal of data complexity, we made a deliberate decision to *not* attempt to capture all fields in our resulting file. We made an effort to capture a subset of fields that we believed would be most useful for genome-wide filtering, and also included `variation_id` as a column to enable the user to look up additional details on the ClinVar website. For instance, the page for the variant with `variation_id` 7105 is located at [ncbi.nlm.nih.gov/clinvar/variation/7105/](http://www.ncbi.nlm.nih.gov/clinvar/variation/7105/). Note that we also do not capture all of the complexity of the fields that are included in the xml.
 
 #### Limitation
 
-This tool has some limited functionality on Windows due to the difficulty in installing some tools/packages.  The repo for normalize.py does not contain license information so has not been modified and requires the pysam package.  Additional tools such as [tabix](http://www.htslib.org/download/) and [bgzip](http://www.htslib.org/download/) are also required for indexing of vcf files.  These steps will also be skipped if these tools/packages are not installed.  
+This tool has some limited functionality on Windows due to the difficulty in installing some tools/packages.  The repo for normalize.py does not contain license information so has not been modified and requires the pysam package.  Additional tools such as [tabix](http://www.htslib.org/download/) and [bgzip](http://www.htslib.org/download/) are also required for compressing and indexing of vcf files.  These steps will also be skipped if these tools/packages are not installed.  
 
 #### License, terms, and conditions
 

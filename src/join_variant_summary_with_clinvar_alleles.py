@@ -4,40 +4,54 @@ import pandas as pd
 import argparse
 
 
-from parse_clinvar_xml import HEADER
+#from parse_clinvar_xml import HEADER
 
-FINAL_HEADER = HEADER + ['gold_stars', 'conflicted']
+#FINAL_header = HEADER + ['gold_stars', 'conflicted']
+#FINAL_HEADER = HEADER + ['GOLD_STARS', 'CONFLICTED']
+
+HEADER = ['CHROM', 'POS', 'REF', 'ALT', 'START', 'STOP', 'STRAND', 'VARIATION_TYPE', 'VARIATION_ID', 'RCV', 'SCV',
+		  'ALLELE_ID', 'SYMBOL',
+		  'HGVS_C', 'HGVS_P', 'MOLECULAR_CONSEQUENCE',
+		  'CLINICAL_SIGNIFICANCE', 'CLINICAL_SIGNIFICANCE_ORDERED', 'PATHOGENIC', 'LIKELY_PATHOGENIC',
+		  'UNCERTAIN_SIGNIFICANCE',
+		  'LIKELY_BENIGN', 'BENIGN', 'REVIEW_STATUS', 'REVIEW_STATUS_ORDERED',
+		  'LAST_EVALUATED', 'ALL_SUBMITTERS', 'SUBMITTERS_ORDERED', 'ALL_TRAITS',
+		  'ALL_PMIDS', 'INHERITANCE_MODES', 'AGE_OF_ONSET', 'PREVALANCE',
+		  'DISEASE_MECHANISM', 'ORIGIN', 'XREFS', 'DATES_ORDERED']
 
 
 def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_alleles_table,genome_build_id,out_name):
+
     variant_summary = pd.read_csv(variant_summary_table, sep="\t", index_col=False, compression="gzip",low_memory=False)
     print ("variant_summary raw", variant_summary.shape)
 
-    clinvar_alleles = pd.read_csv(clinvar_alleles_table, sep="\t",index_col=False, compression="gzip",low_memory=False)
+    clinvar_alleles = pd.read_csv(clinvar_alleles_table, sep="\t",index_col=False, low_memory=False)
     print ("clinvar_alleles raw", clinvar_alleles.shape)
 
+    FINAL_HEADER = list(t.columns.values) + ['GOLD_STARS', 'CONFLICTED']
+
     # use lowercase names and replace . with _ in column names:
-    variant_summary = variant_summary.rename(columns=dict((col, col.lower().replace(".", "_"))for col in variant_summary.columns))
+    variant_summary = variant_summary.rename(columns=dict((col, col.UPPER().replace(".", "_"))for col in variant_summary.columns))
     # rename first column to allele_id:
-    variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "allele_id"})
+    variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "ALLELE_ID"})
 
     # extract relevant columns for the correct assembly and
     # rename clinicalsignificance, reviewstatus, lastevaluated:
-    variant_summary = variant_summary[variant_summary['assembly'] == genome_build_id]
+    variant_summary = variant_summary[variant_summary['ASSEMBLY'] == genome_build_id]
     variant_summary = variant_summary[['allele_id', 'clinicalsignificance', 'reviewstatus','lastevaluated']]
-    variant_summary = variant_summary.rename(columns={'clinicalsignificance': 'clinical_significance','reviewstatus': 'review_status','lastevaluated':'last_evaluated'})
+    variant_summary = variant_summary.rename(columns={'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
 
     # remove the duplicated records in variant summary due to alternative loci such as PAR but would be problematic for rare cases like translocation
     variant_summary=variant_summary.drop_duplicates()
     print ("variant_summary after filter", variant_summary.shape)
 
     # remove clinical_significance and review_status from clinvar_alleles:
-    clinvar_alleles = clinvar_alleles.drop(['clinical_significance', 'review_status','last_evaluated'], axis=1)
+    clinvar_alleles = clinvar_alleles.drop(['CLINICAL_SIGNIFICANCE', 'REVIEW_STATUS','LAST_EVALUATED'], axis=1)
 
     # pandas is sensitive to some rows having allele_id joined on ;, causing
     # an object dtype, with some entries being ints and others strs
-    clinvar_alleles['allele_id'] = clinvar_alleles['allele_id'].astype(str)
-    variant_summary['allele_id'] = variant_summary['allele_id'].astype(str)
+    clinvar_alleles['ALLELE_ID'] = clinvar_alleles['ALLELE_ID'].astype(str)
+    variant_summary['ALLELE_ID'] = variant_summary['ALLELE_ID'].astype(str)
 
     print ("clinvar_alleles after filter", clinvar_alleles.shape)
 
@@ -57,11 +71,11 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
         'practice guideline': 4,
         '-':'-'
     }
-    df['gold_stars'] = df.review_status.map(gold_star_map)
+    df['GOLD_STARS'] = df.review_status.map(gold_star_map)
 
     # The use of expressions on clinical significance on ClinVar aggregate records (RCV) https://www.ncbi.nlm.nih.gov/clinvar/docs/clinsig/#conflicts
     # conflicted = 1 if using "conflicting"
-    df['conflicted'] = df['clinical_significance'].str.contains("onflicting", case=False).astype(int)
+    df['CONFLICTED'] = df['CLINICAL_SIGNIFICANCE'].str.contains("onflicting", case=False).astype(int)
 
     # reorder columns just in case
     df = df.ix[:, FINAL_HEADER]
