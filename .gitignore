@@ -5,8 +5,7 @@ src/__pycache__/
 *.py[cod]
 
 # normalize.py is retrieved from another repo
-src/normalize.py
-normalize.py
+# src/normalize.py  normalize.py added to repo with permission from Eric Minikel
 
 ### Heavy Data Files ###
 src/pipeline_output
