@@ -114,7 +114,9 @@ This function takes a tab-delimited file with a header line containing columns
 named chrom, pos, ref, and alt, plus any other columns. It normalizes the
 chrom, pos, ref, and alt, and writes all columns out to another file.
 '''
-def normalize_tab_delimited_file(infile, outfile, reference_fasta, verbose=True):
+def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose=True):
+    infile= open(in_file,'r')
+    outfile=open(out_file,'w')
     pysam_fasta = pysam.FastaFile(reference_fasta) # create a pysam object of the reference genome
     header = infile.readline() # get header of input file
     columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
@@ -124,6 +126,8 @@ def normalize_tab_delimited_file(infile, outfile, reference_fasta, verbose=True)
     wrong_ref = 0
     invalid_nucleotide = 0
     for line in infile.readlines():
+        if line.strip()=="":
+            continue
         data = dict(zip(columns,[x.strip() for x in line.strip().split('\t')]))
         # fill the data with blanks for any missing data
         for column in columns:
@@ -149,7 +153,8 @@ def normalize_tab_delimited_file(infile, outfile, reference_fasta, verbose=True)
         counter += 1
         if verbose and counter % 1000 == 0:
             sys.stderr.write("\r%s records processed\n"%(counter))
-    outfile.write('\n\n')
+    outfile.close()
+    infile.close()
     if verbose:
         sys.stderr.write("Final counts of variants discarded:\nREF == ALT: %s\nWrong REF: %s\nInvalid nucleotide: %s\n"%(ref_equals_alt, wrong_ref, invalid_nucleotide))
 
@@ -164,5 +169,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Python implementation of vt normalize')
     parser.add_argument('-R', '--reference_fasta', type=str, default='',
         help="Path to FASTA file of reference genome. Must be samtools faidx'ed")
+    parser.add_argument('-i', '--infile', type=str, help="TSV file to be sorted", dest="infile")
+    parser.add_argument('-o', '--outfile', type=str, help="File name of outfile", dest="outfile")
     args = parser.parse_args()
-    normalize_tab_delimited_file(sys.stdin, sys.stdout, args.reference_fasta)
+    normalize_tab_delimited_file(args.infile, args.outfile, args.reference_fasta)

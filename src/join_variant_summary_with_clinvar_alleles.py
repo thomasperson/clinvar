@@ -28,17 +28,17 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
     clinvar_alleles = pd.read_csv(clinvar_alleles_table, sep="\t",index_col=False, low_memory=False)
     print ("clinvar_alleles raw", clinvar_alleles.shape)
 
-    FINAL_HEADER = list(t.columns.values) + ['GOLD_STARS', 'CONFLICTED']
+    FINAL_HEADER = list(clinvar_alleles.columns.values) + ['GOLD_STARS', 'CONFLICTED']
 
     # use lowercase names and replace . with _ in column names:
-    variant_summary = variant_summary.rename(columns=dict((col, col.UPPER().replace(".", "_"))for col in variant_summary.columns))
+    variant_summary = variant_summary.rename(columns=dict((col, col.upper().replace(".", "_"))for col in variant_summary.columns))
     # rename first column to allele_id:
     variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "ALLELE_ID"})
 
     # extract relevant columns for the correct assembly and
     # rename clinicalsignificance, reviewstatus, lastevaluated:
     variant_summary = variant_summary[variant_summary['ASSEMBLY'] == genome_build_id]
-    variant_summary = variant_summary[['allele_id', 'clinicalsignificance', 'reviewstatus','lastevaluated']]
+    variant_summary = variant_summary[['ALLELE_ID' ,'CLINICALSIGNIFICANCE','REVIEWSTATUS','LASTEVALUATED']]
     variant_summary = variant_summary.rename(columns={'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
 
     # remove the duplicated records in variant summary due to alternative loci such as PAR but would be problematic for rare cases like translocation
@@ -56,7 +56,7 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
     print ("clinvar_alleles after filter", clinvar_alleles.shape)
 
     # join the two tables on allele_id:
-    df = pd.merge(clinvar_alleles, variant_summary,on='allele_id', how='inner')
+    df = pd.merge(clinvar_alleles, variant_summary,on='ALLELE_ID', how='inner')
     print ("merged raw", df.shape)
 
     # map review_status to gold starts:
@@ -71,7 +71,7 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
         'practice guideline': 4,
         '-':'-'
     }
-    df['GOLD_STARS'] = df.review_status.map(gold_star_map)
+    df['GOLD_STARS'] = df.REVIEW_STATUS.map(gold_star_map)
 
     # The use of expressions on clinical significance on ClinVar aggregate records (RCV) https://www.ncbi.nlm.nih.gov/clinvar/docs/clinsig/#conflicts
     # conflicted = 1 if using "conflicting"

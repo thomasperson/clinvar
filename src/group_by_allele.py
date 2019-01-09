@@ -29,8 +29,8 @@ def group_by_allele(infile_path, outfile_path):
     for line in infile:
         if line.strip()=="":
             continue
-        data = dict(zip(pcx.HEADER, line.strip().split('\t')))
-        unique_id = '_'.join([data['chrom'], str(data['pos']), data['ref'], data['alt']])
+        data = dict(zip(pcx.HEADER, [x.strip() for x in line.strip().upper().split('\t')]))
+        unique_id = '_'.join([data['CHROM'], str(data['POS']), data['REF'], data['ALT']])
         if unique_id == last_unique_id:
             data = group_alleles(last_data, data)
         elif last_data is not None:
@@ -57,15 +57,15 @@ def group_alleles(data1, data2):
         data2: dictionary of column-name, value pairs for table record #2
     """
 
-    if (data1['chrom'], data1['pos'], data1['ref'], data1['alt']) != (data2['chrom'], data2['pos'], data2['ref'], data2['alt']):
+    if (data1['CHROM'], data1['POS'], data1['REF'], data1['ALT']) != (data2['CHROM'], data2['POS'], data2['REF'], data2['ALT']):
         raise ValueError("data1 variant id != data2 variant id: %s != %s" % (data1, data2))
 
     combined_data = data1  # this sets defaults, now we fix it:
 
     # 'pathogenic', 'benign', 'conflicted', 'gold_stars',
     # concatenate columns that may have lists of values
-    loc_column = ['chrom','pos','ref','alt']
-    num_field = ['pathogenic', 'likely_pathogenic','uncertain_significance','likely_benign', 'benign']
+    loc_column = ['CHROM','POS','REF','ALT']
+    num_field = ['PATHOGENIC', 'LIKELY_PATHOGENIC','UNCERTAIN_SIGNIFICANCE','LIKELY_BENIGN', 'BENIGN']
     info_column = [x for x in pcx.HEADER if x not in loc_column and x not in num_field]
 
     for column_name in info_column:
@@ -85,7 +85,7 @@ def group_alleles(data1, data2):
 
 def main():
     parser = argparse.ArgumentParser(description='De-duplicate the output from parse_clinvar_xml.py')
-    parser.add_argument('-i', '--infile', type=str, help="Sorted raw single output of pasee_clinvar_xml.py.  i.e. clinvar_table_raw.single.GRCh38.sorted.tsv")
+    parser.add_argument('-i', '--infile', type=str, help="Sorted raw single output of parse_clinvar_xml.py.  i.e. clinvar_table_raw.single.GRCh38.sorted.tsv")
     parser.add_argument('-o', '--outfile', type=str, help="Output file to store grouped alleles.")
     args = parser.parse_args()
 
