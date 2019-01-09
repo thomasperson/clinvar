@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#Forked from https://github.com/ericminikel/minimal_representation and added to repo with permission from eric.minikel@prionalliance.org
 '''
 This script is a python implementation of the algorithm for variant
 normalization described by Tan et al 2015:
@@ -58,7 +58,7 @@ class WrongRefError(Exception):
             self.value = value
         def __str__(self):
             return repr(self.value)
-   
+
 
 '''
 Accepts a pysam FastaFile object pointing to the reference genome, and
@@ -117,21 +117,21 @@ chrom, pos, ref, and alt, and writes all columns out to another file.
 def normalize_tab_delimited_file(infile, outfile, reference_fasta, verbose=True):
     pysam_fasta = pysam.FastaFile(reference_fasta) # create a pysam object of the reference genome
     header = infile.readline() # get header of input file
-    columns = header.strip('\n').split('\t')  # parse col names 
+    columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
     outfile.write('\t'.join(columns) + '\n') # write header line plus the CpG col to be generated
     counter = 0
     ref_equals_alt = 0
     wrong_ref = 0
     invalid_nucleotide = 0
     for line in infile.readlines():
-        data = dict(zip(columns,line.strip('\n').split('\t')))
+        data = dict(zip(columns,[x.strip() for x in line.strip().split('\t')]))
         # fill the data with blanks for any missing data
         for column in columns:
             if column not in data.keys():
                 data[column] = ''
-        pos = int(data['pos'])
+        pos = int(data['POS'])
         try:
-            data['chrom'], pos, data['ref'], data['alt'] = normalize(pysam_fasta, data['chrom'], pos, data['ref'], data['alt'])
+            data['CHROM'], pos, data['REF'], data['ALT'] = normalize(pysam_fasta, data['CHROM'], pos, data['REF'], data['ALT'])
         except RefEqualsAltError as e:
             sys.stderr.write('\n'+str(e)+'\n')
             ref_equals_alt += 1
@@ -144,7 +144,7 @@ def normalize_tab_delimited_file(infile, outfile, reference_fasta, verbose=True)
             sys.stderr.write('\n'+str(e)+'\n')
             invalid_nucleotide += 1
             continue
-        data['pos'] = str(pos)
+        data['POS'] = str(pos)
         outfile.write('\t'.join([data[column] for column in columns]) + '\n')
         counter += 1
         if verbose and counter % 1000 == 0:
