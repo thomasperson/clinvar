@@ -61,15 +61,10 @@ def download_file(url,local_filename):
 	return
 
 def downloadClinVarFiles(cli_args):
-	normalize_py="https://raw.githubusercontent.com/thomasperson/minimal_representation/master/normalize.py"   #FORK of https://github.com/ericminikel/minimal_representation to ensure continued availability.
 	clinvar_xml="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
 	clinvar_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
 
 	if cli_args.download_new:
-		print("Downloading normalize.py")
-		download_file(normalize_py, "src"+os.sep+"normalize.py")
-		print("Downloading normalize.py complete")
-
 		print("Downloading "+  clinvar_xml)
 		download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
 		print("Downloading of ClinVarFullRelease_00-latest.xml.gz complete")
@@ -89,10 +84,6 @@ def downloadClinVarFiles(cli_args):
 			download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
 			print("Downloading variant_summary.txt.gz complete")
 
-		if not checkExists("src"+os.sep+"normalize.py"):
-			print("Downloading normalize.py")
-			download_file(normalize_py, "src"+os.sep+"normalize.py")
-			print("Downloading normalize.py complete")
 	return
 
 def sortRawTextFile(unSortedFile, sortedFile):
