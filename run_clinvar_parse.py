@@ -179,13 +179,13 @@ def main():
 		isec.join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv", "GRCh37",cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv.gz")
 
 	if cli_args.b38fasta is not None:
-		#pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
-		#sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv")
-		#sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv")
+		pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv")
+		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv")
 		if pysam_installed and fasta_files:
-			#normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv",cli_args.b38fasta)
-			#normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv",cli_args.b38fasta)
-			#gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
+			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv",cli_args.b38fasta)
+			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv",cli_args.b38fasta)
+			gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
 			pass
 		else:
 			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv")
