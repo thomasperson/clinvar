@@ -31,7 +31,7 @@ To create a flat representation of ClinVar suited for our purposes, we took seve
 
 1. Download the latest XML and TXT dumps from ClinVar FTP.
 2. Parse the XML file using [src/parse_clinvar_xml.py](src/parse_clinvar_xml.py) to extract fields of interest into a flat file.
-3. Normalize using [our Python implementation](https://github.com/ericminikel/minimal_representation/blob/master/normalize.py) of [vt normalize](http://genome.sph.umich.edu/wiki/Variant_Normalization) (see [[Tan 2015]]).
+3. Normalize using [our Python implementation](src/normalize.py) of [vt normalize](http://genome.sph.umich.edu/wiki/Variant_Normalization) (see [[Tan 2015]]).
 4. Group the allele-trait records by allele using [src/group_by_allele.py](src/group_by_allele.py) to aggregate interpretations from multiple submitters by allele, independent of conditions.
 5. Join the TXT file using [src/join_variant_summary_with_clinvar_alleles.py](src/join_variant_summary_with_clinvar_alleles.py) to aggregate interpretations from multiple submitters independent of conditions.
 6. Generate the VCF file and other tables based on the file created in 5.
@@ -46,7 +46,7 @@ To create a flat representation of ClinVar suited for our purposes, we took seve
 
 The pipeline scripts expect the following programs to be available on your system (and in your `$PATH`):
 
-[python](https://www.python.org/), [tabix](http://www.htslib.org/download/), [bgzip](http://www.htslib.org/download/)
+[python](https://www.python.org/), [tabix](http://www.htslib.org/download/), [bgzip](http://www.htslib.org/download/ ),[vcf-sort](https://vcftools.github.io/index.html)
 
 To run the pipeline:
 

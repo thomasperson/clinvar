@@ -19,6 +19,7 @@ sys.path.insert(0, 'src'+os.sep)
 import parse_clinvar_xml as pcx
 import group_by_allele as gba
 import join_variant_summary_with_clinvar_alleles as isec
+import clinvar_table_to_vcf as vcf
 
 
 try:
@@ -34,7 +35,7 @@ try:
 except ImportError as e:
 	sys.exit("ERROR: Python module not installed. %s. Please run 'pip install -r requirements.txt' " % e)
 
-for executable in ['tabix', 'bgzip']:  #NOTE:working on pure python implementation to remove need for these *nix based programs.
+for executable in ['tabix', 'bgzip', 'vcf-sort']:
 	assert spawn.find_executable(executable), "Command %s not found, see README" % executable
 
 pysam_installed=False
@@ -43,7 +44,7 @@ try:
 	import normalize
 	pysam_installed=True
 except ImportError as e:
-	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access.  Maybe I can pull out just that portion or reimplement or find another python module.
+	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access. TODO: Maybe I can pull out just that portion or reimplement or find another python module.
 
 
 def checkExists(fileAndPath):
@@ -134,7 +135,7 @@ def parseArguments():
 	g.add("--output-dir", default=dir_path+os.sep+"output"+os.sep, help="Final output files will be located here", type=str, dest='output_dir')
 	g.add("-N", "--new", help='Download all New.  Causes ouput_tmp to be removed and recreated and latest ClinVar Files to be downloaded', action='store_true', default=False, dest="download_new")
 	g.add("--tmp-dir", default=dir_path+os.sep+"output_tmp"+os.sep, help="Temporary output direcotry for temp files ", dest="output_tmp", type=str)
-	g.add("--rm-temp", default=True, action='store_false',  help="Causes temporary directories and temp files to not be removed when finished.  Default: Automaticly removed. ", dest="rm_tmp")
+	g.add("--rm-temp", default=True, action='store_false',  help="Causes temporary directories and temp files to NOT be removed when finished.  Default: Automaticly removed. ", dest="rm_tmp")
 	g.add("--rm-output", default=False, action='store_true', help="Causes ouput directories to be deleted and recreated.  Requires -N option to also be set.  Default: False.", dest="rm_output")
 
 	return p.parse_args()
@@ -177,22 +178,42 @@ def main():
 			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.sorted.tsv",cli_args.output_dir+"GRCh37"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh37.tsv")
 		gba.group_by_allele(cli_args.output_tmp+"sorted.clinvar_table_raw.single.GRCh37.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv")
 		isec.join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv", "GRCh37",cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv.gz")
+		if spawn.find_executable('vcf-sort') is not None:
+			vcf.table_to_vcf(cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh37.unsorted.vcf")
+			if spawn.find_executable('bgzip') is not None:
+				os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh37.unsorted.vcf > "+cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.sorted.vcf")
+				os.system("bgzip -f "+cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.sorted.vcf")
+				if spawn.find_executable('tabix') is not None:
+					os.system("tabix -p vcf -f "+cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.sorted.vcf.gz")
+			else:
+				os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh37.unsorted.vcf > "+cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.sorted.vcf")
+		else:
+			vcf.table_to_vcf(cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv.gz", cli_args.b37fasta, cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.unsorted.vcf")
 
 	if cli_args.b38fasta is not None:
-		pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv")
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv")
+		#pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
+		#sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv")
+		#sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv")
 		if pysam_installed and fasta_files:
-			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv",cli_args.b38fasta)
-			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv",cli_args.b38fasta)
-			gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
+			#normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv",cli_args.b38fasta)
+			#normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv",cli_args.b38fasta)
+			#gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
 			pass
 		else:
 			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv")
 			gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
 		isec.join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv", "GRCh38",cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.tsv.gz")
-
-
+		if spawn.find_executable('vcf-sort') is not None:
+			vcf.table_to_vcf(cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh38.unsorted.vcf")
+			if spawn.find_executable('bgzip') is not None:
+				os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh38.unsorted.vcf > "+cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.sorted.vcf")
+				os.system("bgzip -f "+cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.sorted.vcf")
+				if spawn.find_executable('tabix') is not None:
+					os.system("tabix -p vcf -f "+cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.sorted.vcf.gz")
+			else:
+				os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh38.unsorted.vcf > "+cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.sorted.vcf")
+		else:
+			vcf.table_to_vcf(cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.tsv.gz", cli_args.b38fasta, cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.unsorted.vcf")
 
 
 

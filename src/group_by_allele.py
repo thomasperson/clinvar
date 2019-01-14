@@ -29,7 +29,7 @@ def group_by_allele(infile_path, outfile_path):
     for line in infile:
         if line.strip()=="":
             continue
-        data = dict(zip(pcx.HEADER, [x.strip() for x in line.strip().upper().split('\t')]))
+        data = dict(zip(pcx.HEADER, [x.strip() for x in line.strip().split('\t')]))
         unique_id = '_'.join([data['CHROM'], str(data['POS']), data['REF'], data['ALT']])
         if unique_id == last_unique_id:
             data = group_alleles(last_data, data)

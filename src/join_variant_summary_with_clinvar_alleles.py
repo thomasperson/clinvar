@@ -3,29 +3,13 @@ import sys
 import pandas as pd
 import argparse
 
-
-#from parse_clinvar_xml import HEADER
-
-#FINAL_header = HEADER + ['gold_stars', 'conflicted']
-#FINAL_HEADER = HEADER + ['GOLD_STARS', 'CONFLICTED']
-
-HEADER = ['CHROM', 'POS', 'REF', 'ALT', 'START', 'STOP', 'STRAND', 'VARIATION_TYPE', 'VARIATION_ID', 'RCV', 'SCV',
-		  'ALLELE_ID', 'SYMBOL',
-		  'HGVS_C', 'HGVS_P', 'MOLECULAR_CONSEQUENCE',
-		  'CLINICAL_SIGNIFICANCE', 'CLINICAL_SIGNIFICANCE_ORDERED', 'PATHOGENIC', 'LIKELY_PATHOGENIC',
-		  'UNCERTAIN_SIGNIFICANCE',
-		  'LIKELY_BENIGN', 'BENIGN', 'REVIEW_STATUS', 'REVIEW_STATUS_ORDERED',
-		  'LAST_EVALUATED', 'ALL_SUBMITTERS', 'SUBMITTERS_ORDERED', 'ALL_TRAITS',
-		  'ALL_PMIDS', 'INHERITANCE_MODES', 'AGE_OF_ONSET', 'PREVALANCE',
-		  'DISEASE_MECHANISM', 'ORIGIN', 'XREFS', 'DATES_ORDERED']
-
-
 def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_alleles_table,genome_build_id,out_name):
 
     variant_summary = pd.read_csv(variant_summary_table, sep="\t", index_col=False, compression="gzip",low_memory=False)
     print ("variant_summary raw", variant_summary.shape)
 
     clinvar_alleles = pd.read_csv(clinvar_alleles_table, sep="\t",index_col=False, low_memory=False)
+
     print ("clinvar_alleles raw", clinvar_alleles.shape)
 
     FINAL_HEADER = list(clinvar_alleles.columns.values) + ['GOLD_STARS', 'CONFLICTED']
@@ -33,13 +17,14 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
     # use lowercase names and replace . with _ in column names:
     variant_summary = variant_summary.rename(columns=dict((col, col.upper().replace(".", "_"))for col in variant_summary.columns))
     # rename first column to allele_id:
-    variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "ALLELE_ID"})
+	variant_summary = variant_summary.rename(columns={'#AlleleID':'ALLELE_ID', 'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
+    #variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "ALLELE_ID"})
 
     # extract relevant columns for the correct assembly and
     # rename clinicalsignificance, reviewstatus, lastevaluated:
     variant_summary = variant_summary[variant_summary['ASSEMBLY'] == genome_build_id]
     variant_summary = variant_summary[['ALLELE_ID' ,'CLINICALSIGNIFICANCE','REVIEWSTATUS','LASTEVALUATED']]
-    variant_summary = variant_summary.rename(columns={'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
+
 
     # remove the duplicated records in variant summary due to alternative loci such as PAR but would be problematic for rare cases like translocation
     variant_summary=variant_summary.drop_duplicates()
@@ -80,6 +65,8 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
     # reorder columns just in case
     df = df.ix[:, FINAL_HEADER]
     print ("merged final", df.shape)
+
+	df= df.sort_values(['CHROM', 'POS', 'REF', 'ALT'])
 
     df.to_csv(out_name, sep="\t", index=False, compression='gzip')
 

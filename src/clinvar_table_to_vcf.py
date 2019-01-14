@@ -25,7 +25,7 @@ def table_to_vcf(input_table_path, input_reference_genome, output_vcf):
 		sys.exit("ERROR: %s (reference FASTA .fai) not found" %
 				 input_reference_genome_fai)
 
-	 outVCF=open(output_vcf,'w')
+	outVCF=open(output_vcf,'w')
 
 	# read input table. low_memory allows dtypes to be inferred
 	t = pd.read_table(gzopen(input_table_path), low_memory=False)
@@ -42,11 +42,11 @@ def table_to_vcf(input_table_path, input_reference_genome, output_vcf):
 		'GOLD_STARS': "Number of gold stars as shown on clinvar web pages to summarize review status. Lookup table described at http://www.ncbi.nlm.nih.gov/clinvar/docs/details/ was used to map the REVIEW_STATUS value to this number.",
 	}
 	for key in HEADER:
-		outVCF.write("##INFO=<ID="+key.upper()"+,Number=1,Type=String,Description="+descriptions.get(key, key.upper())+">\n")
+		outVCF.write("##INFO=<ID="+key.upper()+",Number=1,Type=String,Description="+descriptions.get(key, key.upper())+">\n")
 	with open(input_reference_genome_fai) as in_fai:
 		for line in in_fai:
 			chrom, length, _ = line.split("\t", 2)
-			outVCF.write("##contig=<ID="+chrom.replace("chr", "")+",length="+length+">\n"
+			outVCF.write("##contig=<ID="+chrom.replace("chr", "")+",length="+length+">\n")
 	outVCF.write("##reference="+input_reference_genome+"\n")
 
 	outVCF.write("\t".join(["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"])+"\n")
