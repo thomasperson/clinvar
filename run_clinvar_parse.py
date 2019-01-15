@@ -69,16 +69,13 @@ def downloadClinVarFiles(cli_args):
 	if cli_args.download_new:
 		if cli_args.run_xml:
 			print("Downloading "+  clinvar_xml)
-			#download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
 			download_file(clinvar_xml, cli_args.xml_file)
 			print("Downloading of ClinVarFullRelease_00-latest.xml.gz complete")
 		if cli_args.run_tsv:
 			print("Downloading "+  clinvar_submission_summary_tsv)
-			#download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
 			download_file(clinvar_submission_summary_tsv, cli_args.S_tsv_file)
 			print("Downloading of submission_summary.txt.gz complete")
 		print("Downloading " + clinvar_variant_summary_tsv)
-		#download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
 		download_file(clinvar_variant_summary_tsv, cli_args.V_tsv_file)
 		print("Downloading of variant_summary.txt.gz complete")
 
@@ -95,7 +92,7 @@ def downloadClinVarFiles(cli_args):
 
 		if not checkExists(cli_args.S_tsv_file) and cli_args.run_tsv:
 			print("No ClinVar submission_summary file specified or specified file does not exist.  Downloading latest file to use")
-			download_file(clinvar_submission_summary_tsv, cli_args.S_tsv_file)
+			download_file(clinvar_submission_Reading & Writing GZIP Files in Pythonsummary_tsv, cli_args.S_tsv_file)
 			print("Downloading variant_summary.txt.gz complete")
 
 	return
@@ -204,7 +201,7 @@ def main():
 	#downloads clinvar and normalize_py
 	downloadClinVarFiles(cli_args)
 
-	#Runs the originatil, XML pipeline.
+	#Runs the original, XML pipeline.  NOT default.
 	if cli_args.run_xml:
 
 		##TODO!!!!!!  Currntly only does one genome build at a time.  Should just ouput both at same time cli_args.output_tmp so xml doesn't have to be parsed twice
@@ -217,7 +214,12 @@ def main():
 		if cli_args.b38fasta is not None:
 			runXMLpipeLine(cli_args, 'GRCh38',cli_args.b38fasta)
 
-	#remves temp fileso
+	if cli_args.run_tsv:
+		#TODO!!!  Do all the things!
+		#QUESTION what do the haplotypes look like in pure tsv?
+		pass
+
+	#remves temp files.
 	if cli_args.rm_tmp:
 		shutil.rmtree(cli_args.output_tmp)
 
