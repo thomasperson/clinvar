@@ -63,31 +63,44 @@ def download_file(url,local_filename):
 
 def downloadClinVarFiles(cli_args):
 	clinvar_xml="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
-	clinvar_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
+	clinvar_variant_summary_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
+	clinvar_submission_summary_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz"
 
 	if cli_args.download_new:
-		print("Downloading "+  clinvar_xml)
-		download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
-		print("Downloading of ClinVarFullRelease_00-latest.xml.gz complete")
-
-		print("Downloading " + clinvar_tsv)
-		download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
-		print("Downloading variant_summary.txt.gz complete")
+		if cli_args.run_xml:
+			print("Downloading "+  clinvar_xml)
+			#download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
+			download_file(clinvar_xml, cli_args.xml_file)
+			print("Downloading of ClinVarFullRelease_00-latest.xml.gz complete")
+		if cli_args.run_tsv:
+			print("Downloading "+  clinvar_submission_summary_tsv)
+			#download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
+			download_file(clinvar_submission_summary_tsv, cli_args.S_tsv_file)
+			print("Downloading of submission_summary.txt.gz complete")
+		print("Downloading " + clinvar_variant_summary_tsv)
+		#download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
+		download_file(clinvar_variant_summary_tsv, cli_args.V_tsv_file)
+		print("Downloading of variant_summary.txt.gz complete")
 
 	else:
-		if not checkExists(cli_args.xml_file):
-			print("No ClinVar XML file specified or specified file does not exist.  Downloading latest ClinVar XML file to use")
-			download_file(clinvar_xml, cli_args.output_tmp+"ClinVar.xml.gz")
+		if not checkExists(cli_args.xml_file) and cli_args.run_xml:
+			print("No ClinVar XML file specified or specified file does not exist.  Downloading latest file to use")
+			download_file(clinvar_xml, cli_args.output_tmp+"ClinVarFullRelease_00-latest.xml.gz")
 			print("Downloading ClinVarFullRelease_00-latest.xml.gz complete")
 
-		if not checkExists(cli_args.tsv_file):
-			print("No ClinVar TSV file specified or specified file does not exist.  Downloading latest ClinVar TSV file to use")
-			download_file(clinvar_tsv, cli_args.output_tmp+"ClinVar.tsv.gz")
+		if not checkExists(cli_args.V_tsv_file):
+			print("No ClinVar variant_summary file specified or specified file does not exist.  Downloading latest file to use")
+			download_file(clinvar_variant_summary_tsv, cli_args.V_tsv_file)
+			print("Downloading variant_summary.txt.gz complete")
+
+		if not checkExists(cli_args.S_tsv_file) and cli_args.run_tsv:
+			print("No ClinVar submission_summary file specified or specified file does not exist.  Downloading latest file to use")
+			download_file(clinvar_submission_summary_tsv, cli_args.S_tsv_file)
 			print("Downloading variant_summary.txt.gz complete")
 
 	return
 
-def sortRawTextFile(unSortedFile, sortedFile):
+def sortRawXMLoutTextFile(unSortedFile, sortedFile):
 	to_sort=open(unSortedFile,'r')
 	sorted_file=open(sortedFile,'w')
 	header=0
@@ -125,19 +138,20 @@ def createDirectories(cli_args):
 
 	return
 
-def runPipeLine(cli_args, genome_build_id,fasta):
-	#pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, genome_build_id)   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
-	#sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv")
-	#sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv")
+def runXMLpipeLine(cli_args, genome_build_id,fasta):
+	pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, genome_build_id)   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
+	print("Sorting ouput Files:")
+	sortRawXMLoutTextFile(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv")
+	sortRawXMLoutTextFile(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv")
 	if pysam_installed:
-		#normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+""+genome_build_id+""+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv",fasta)
-		#normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv",fasta)
-		#gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+""+genome_build_id+""+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv",fasta)
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv",fasta)
+		gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
 		pass
 	else:
 		shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+genome_build_id+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv")
 		gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
-	isec.join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv", genome_build_id,cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz")
+	isec.join_variant_summary_with_clinvar_alleles(cli_args.V_tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv", genome_build_id,cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz")
 	if spawn.find_executable('vcf-sort') is not None:
 		vcf.table_to_vcf(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf")
 		os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf > "+cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".sorted.vcf")
@@ -156,8 +170,11 @@ def parseArguments():
 	g = p.add_argument_group('main args')
 	g.add("--b37-genome", help="GRCh37 .fa genome reference file  NOTE: fai index also required. ", default=None, required=False, dest="b37fasta", type=str)   ##REQUIRED for normalization, but normalization not requried to run script!
 	g.add("--b38-genome", help="GRCh38 .fa genome reference file. NOTE: Chromosome names must be like '1', '2'.. 'X', 'Y', 'MT'.", default=None, required=False, dest="b38fasta", type=str)  ##REQUIRED for normalization, but normalization not requried to run script!
-	g.add("-X", "--clinvar-xml", help="The local filename of the ClinVarFullRelase.xml.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="xml_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.xml.gz", type=str)
-	g.add("-S", "--clinvar-variant-summary-table", help="The local filename of the variant_summary.txt.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVar.tsv.gz", type=str)
+	g.add("--run-XML-pipeline", default=False, action='store_true',  help="Run original XML parse and variant_summary merge pipeline.  Not run by default", dest="run_xml")
+	g.add("--run-TSV-pipeline", default=True, action='store_false',  help="Run new pipeline that merges just the ClinVar tsv files: variant_summary and submission_summary.", dest="run_tsv")
+	g.add("-X", "--clinvar-xml", help="The local filename of the ClinVarFullRelase.xml.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="xml_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVarFullRelease_00-latest.xml.gz", type=str)
+	g.add("-V", "--clinvar-variant-summary-table", help="The local filename of the variant_summary.txt.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="V_tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"variant_summary.tsv.gz", type=str)
+	g.add("-S", "--clinvar-submission-summary-table", help="The local filename of the submission_summary.txt.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="S_tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"submission_summary.txt.gz", type=str)
 	g.add("--output-prefix", help="Final output files will have this prefix", type=str, dest='output_prefix',default="")
 	g.add("--output-dir", default=dir_path+os.sep+"output"+os.sep, help="Final output files will be located here", type=str, dest='output_dir')
 	g.add("-N", "--new", help='Download all New.  Causes ouput_tmp to be removed and recreated and latest ClinVar Files to be downloaded', action='store_true', default=False, dest="download_new")
@@ -170,10 +187,12 @@ def parseArguments():
 def main():
 
 	cli_args=parseArguments()
+	print("Arguments Used for run:")
 	print(cli_args)
+	print()
 	if cli_args.b37fasta is None and cli_args.b38fasta is None:
 		sys.exit("ERROR: At least one fasta file must be provided.")
-	else:   ####TODO: AUTOMATIC FASTA DOWNLOAD?
+	else:
 		if cli_args.b37fasta is not None and not checkExists(cli_args.b37fasta):
 			sys.exit("Genome reference: file not found:\t"+cli_args.b37fasta)
 		if cli_args.b38fasta is not None and not checkExists(cli_args.b38fasta):
@@ -185,70 +204,20 @@ def main():
 	#downloads clinvar and normalize_py
 	downloadClinVarFiles(cli_args)
 
+	#Runs the originatil, XML pipeline.
+	if cli_args.run_xml:
 
-	##TODO!!!!!!  Currntly only does one genome build at a time.  Should just ouput both at same time cli_args.output_tmp so xml doesn't have to be parsed twice
-	##NOTE Multi done after parse and sort and normalize...  Grouping by allele doens't make sense when everything in is haplotyped based.  Need a new grouping stratagy for multi.
-	##QUESTION: How many Multi show up only in multi and havie higher/lower stars?
-	##NOTE!!! There are missing variants in the multi.
+		##TODO!!!!!!  Currntly only does one genome build at a time.  Should just ouput both at same time cli_args.output_tmp so xml doesn't have to be parsed twice
+		##NOTE Multi done after parse and sort and normalize...  Grouping by allele doens't make sense when everything in is haplotyped based.  Need a new grouping stratagy for multi.
+		##QUESTION: How many Multi show up only in multi and havie higher/lower stars?
+		##NOTE!!! There are missing variants in the multi.
+		##NOTE!!!  Just gonna build a new pipeline to just use tsv files. The Submission summary table can be joined to the Variant summary table on allele ID
+		if cli_args.b37fasta is not None:
+			runXMLpipeLine(cli_args, 'GRCh37',cli_args.b37fasta)
+		if cli_args.b38fasta is not None:
+			runXMLpipeLine(cli_args, 'GRCh38',cli_args.b38fasta)
 
-	if cli_args.b37fasta is not None:
-		runPipeLine(cli_args, 'GRCh37',cli_args.b37fasta)
-	if cli_args.b38fasta is not None:
-		runPipeLine(cli_args, 'GRCh38',cli_args.b38fasta)
-	return
-
-	if cli_args.b37fasta is not None:
-		pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh37')   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.sorted.tsv")
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.sorted.tsv")
-		if pysam_installed:
-			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh37.tsv",cli_args.b38fasta)
-			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh37.sorted.norm.tsv",cli_args.b37fasta)
-			gba.group_by_allele(cli_args.output_tmp+"sorted.clinvar_table_raw.single.GRCh37.sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv")
-		else:
-			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh37.sorted.tsv",cli_args.output_dir+"GRCh37"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh37.tsv")
-		gba.group_by_allele(cli_args.output_tmp+"sorted.clinvar_table_raw.single.GRCh37.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv")
-		isec.join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh37.tsv", "GRCh37",cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv.gz")
-		if spawn.find_executable('vcf-sort') is not None:
-			vcf.table_to_vcf(cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh37.unsorted.vcf")
-			os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh37.unsorted.vcf > "+cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.sorted.vcf")
-			if spawn.find_executable('bgzip') is not None:
-				os.system("bgzip -f "+cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.sorted.vcf")
-				if spawn.find_executable('tabix') is not None:
-					os.system("tabix -p vcf -f "+cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.sorted.vcf.gz")
-		else:
-			vcf.table_to_vcf(cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.tsv.gz", cli_args.b37fasta, cli_args.output_dir+"GRCh37"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh37.unsorted.vcf")
-
-	if cli_args.b38fasta is not None:
-		pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, 'GRCh38')   ##NOTE  ALSO, skipped sequences...  check other sequence locations?!?!  as each record can store multiple places!
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv")
-		sortRawTextFile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.tsv",cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv")
-		if pysam_installed:
-			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv",cli_args.b38fasta)
-			normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv",cli_args.b38fasta)
-			gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
-			pass
-		else:
-			shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi.GRCh38.sorted.tsv",cli_args.output_dir+"GRCh38"+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype.GRCh38.tsv")
-			gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single.GRCh38.sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv")
-		isec.join_variant_summary_with_clinvar_alleles(cli_args.tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single.GRCh38.tsv", "GRCh38",cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.tsv.gz")
-		if spawn.find_executable('vcf-sort') is not None:
-			vcf.table_to_vcf(cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh38.unsorted.vcf")
-			os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single.GRCh38.unsorted.vcf > "+cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.sorted.vcf")
-			if spawn.find_executable('bgzip') is not None:
-				os.system("bgzip -f "+cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.sorted.vcf")
-				if spawn.find_executable('tabix') is not None:
-					os.system("tabix -p vcf -f "+cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.sorted.vcf.gz")
-		else:
-			vcf.table_to_vcf(cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.tsv.gz", cli_args.b38fasta, cli_args.output_dir+"GRCh38"+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.GRCh38.unsorted.vcf")
-
-
-
-
-
-
-
-
+	#remves temp fileso
 	if cli_args.rm_tmp:
 		shutil.rmtree(cli_args.output_tmp)
 

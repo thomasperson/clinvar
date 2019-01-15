@@ -17,13 +17,13 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
 	# use lowercase names and replace . with _ in column names:
 	variant_summary = variant_summary.rename(columns=dict((col, col.upper().replace(".", "_"))for col in variant_summary.columns))
 	# rename first column to allele_id:
-	variant_summary = variant_summary.rename(columns={'#AlleleID':'ALLELE_ID', 'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
+	variant_summary = variant_summary.rename(columns={'#AlleleID': 'ALLELE_ID', 'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
 	#variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "ALLELE_ID"})
 
 	# extract relevant columns for the correct assembly and
 	# rename clinicalsignificance, reviewstatus, lastevaluated:
 	variant_summary = variant_summary[variant_summary['ASSEMBLY'] == genome_build_id]
-	variant_summary = variant_summary[['ALLELE_ID' ,'CLINICALSIGNIFICANCE','REVIEWSTATUS','LASTEVALUATED']]
+	variant_summary = variant_summary[['ALLELE_ID' ,'CLINICAL_SIGNIFICANCE','REVIEW_STATUS','LAST_EVALUATED']]
 
 
 	# remove the duplicated records in variant summary due to alternative loci such as PAR but would be problematic for rare cases like translocation
