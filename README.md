@@ -1,9 +1,9 @@
-## This code is currently being refactored so is currently in beta.  Goal is to enable running with Python2.7.x+ and Python3.6.x+ on Windows and Linux, though some functionality may be missing from Windows.  
-## NOTE: This Fork is not supported or authorized by the MacAurthur Lab in anyway, though I do thank them for their work building the initial framework.
+## This code is currently being refactored so is currently in beta.  Goal is to make it as pure python as possible with support for Python2.7.x+ and Python3.6.x+ on Windows and Linux, though some functionality may be missing if C complied programs are not present.  
+## NOTE: This Fork is not supported or authorized by the MacAurthur Lab in anyway, though I do thank them for their work building the initial framework. Also some functionality found in the original repo has being removed as has been deemed not needed.   
 
 #### In 1 sentence
 
-This repo provides a tool to extract additional fields from the ClinVar XML file and export them into a tab-delimited flat file.
+This repo provides a tool to create a VCF containing individual lab variant annotations from ClinVar.  
 
 #### Output Files
 
