@@ -40,6 +40,26 @@ def table_to_vcf(input_table_path, input_reference_genome, output_vcf):
 
 	descriptions = {    ##TODO!  UPDATE AND EXPAND!!!
 		'GOLD_STARS': "Number of gold stars as shown on clinvar web pages to summarize review status. Lookup table described at http://www.ncbi.nlm.nih.gov/clinvar/docs/details/ was used to map the REVIEW_STATUS value to this number.",
+		'VARIATION_ID': "The identifier assigned by ClinVar and used to build the URL, namely https://ncbi.nlm.nih.gov/clinvar/VariationID",
+		'CLINICAL_SIGNIFICANCE': "Interpretation of the variation-condition relationship",
+		'DATE_LAST_EVALUATED' : "The last date the variation-condition relationship was evaluated by this submitter",
+		'DESCRIPTION' : "An optional free text description of the basis of the interpretation",
+		'SUBMITTED_PHENOTYPE_INFO' :  "The name(s) or identifier(s)  submitted for the condition that was interpreted relative to the variant",
+		'REPORTED_PHENOTYPE_INFO' : "The MedGen identifier/name combinations ClinVar uses to report the condition that was interpreted. 'na' means there is no public identifer in MedGen for the condition.",
+		'REVIEW_STATUS' : "The level of review for this submission, namely http//www.ncbi.nlm.nih.gov/clinvar/docs/variation_report/#review_status",
+		'COLLECTION_METHOD' : "The method by which the submitter obtained the information provided",
+		'ORIGIN_COUNTS' : "The reported origin and the number of observations for each origin",
+		'SUBMITTER' : "The submitter of this record",
+		'SCV' :  "The accession and current version assigned by ClinVar to the submitted interpretation of the variation-condition relationship",
+		'SUBMITTED_GENE_SYMBOL': "The gene symbol reported in this record",
+		'EXPLANATION_OF_INTERPRETATION' : "More details if ClinicalSignificance is 'other' or 'drug response'",
+		'GENE_SYMBOL' : "The offical symbol from HGNC for the gene in which this allele is found.  Will be null if the variant is intergenic or spans multiple genes.",
+		'GENE_ID': "NCBI's identfier for the gene in which this allele is found.  Will be null if the variant is intergenic or spans multiple genes.",
+		'ALLELE_ID' : "The identifier assigned by ClinVar to the simple allele. Will be null if the allele is complex.",
+		'TYPE' : "The type of HGVS expression",
+
+
+
 	}
 	for key in HEADER:
 		outVCF.write("##INFO=<ID="+key.upper()+",Number=1,Type=String,Description="+descriptions.get(key, key.upper())+">\n")

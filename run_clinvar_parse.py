@@ -92,7 +92,7 @@ def downloadClinVarFiles(cli_args):
 
 		if not checkExists(cli_args.S_tsv_file) and cli_args.run_tsv:
 			print("No ClinVar submission_summary file specified or specified file does not exist.  Downloading latest file to use")
-			download_file(clinvar_submission_Reading & Writing GZIP Files in Pythonsummary_tsv, cli_args.S_tsv_file)
+			download_file(clinvar_submission_summary_tsv, cli_args.S_tsv_file)
 			print("Downloading variant_summary.txt.gz complete")
 
 	return
@@ -143,11 +143,10 @@ def runXMLpipeLine(cli_args, genome_build_id,fasta):
 	if pysam_installed:
 		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+""+genome_build_id+""+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv",fasta)
 		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv",fasta)
-		gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
-		pass
+		gba.group_by_allele_rawXML(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
 	else:
 		shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+genome_build_id+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv")
-		gba.group_by_allele(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
+		gba.group_by_allele_rawXML(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
 	isec.join_variant_summary_with_clinvar_alleles(cli_args.V_tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv", genome_build_id,cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz")
 	if spawn.find_executable('vcf-sort') is not None:
 		vcf.table_to_vcf(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf")
@@ -215,6 +214,7 @@ def main():
 			runXMLpipeLine(cli_args, 'GRCh38',cli_args.b38fasta)
 
 	if cli_args.run_tsv:
+		gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", False)
 		#TODO!!!  Do all the things!
 		#QUESTION what do the haplotypes look like in pure tsv?
 		pass
