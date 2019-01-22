@@ -73,7 +73,7 @@ def group_submission_summary_file(infile_path, outfile_path, JSON):
 				submission_file[fields[0]]=value
 
 	outFile = open(outfile_path,'w')
-	outFile.write("\t".join(header))
+	outFile.write("\t".join(header)+"\t")
 	outFile.write("\t".join(ClinSigField.keys())+"\n")
 	try:
 		for k,v in submission_file.iteritems():
