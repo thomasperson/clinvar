@@ -61,11 +61,15 @@ def group_submission_summary_file(infile_path, outfile_path):
 				for i,f in enumerate(fields[1:]):
 					submission_file[fields[0]][i]=submission_file[fields[0]][i]+";"+f
 				if "/" in fields[1]:
-					submission_file[fields[0]][-1][fields[1].split("/")[-1].upper().strip().replace(" ", "_")]+=1
+					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_")
+					submission_file[fields[0]][-1][newField1]+=1
 				else:
 					submission_file[fields[0]][-1][fields[1].upper().strip().replace(" ", "_")]+=1
 			else:
 				value=[]
+				if "/" in fields[1]:
+					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_")
+					fields[1]=newField1
 				for f in fields[1:]:
 					value.append(f)
 				V_ClinSigField=ClinSigField.copy()
@@ -79,13 +83,14 @@ def group_submission_summary_file(infile_path, outfile_path):
 	try:
 		for k,v in submission_file.iteritems():
 			outFile.write(k+'\t')
-			outFile.write("\t".join(v[:-1]))
+			outFile.write("\t".join(v[:-1])+"\t")
 			outFile.write("\t".join(str(e) for e in v[-1].values())+"\n")
 	except AttributeError:
 		for k,v in submission_file.items():
 			outFile.write(k+'\t')
-			outFile.write("\t".join(v[:-1]))
+			outFile.write("\t".join(v[:-1])+"\t")
 			outFile.write("\t".join(str(e) for e in v[-1].values())+"\n")
+	outFile.close()
 
 	return submission_file
 

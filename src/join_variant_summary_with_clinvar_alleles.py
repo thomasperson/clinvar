@@ -74,11 +74,23 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
 
 def join_variant_summary_with_submission_summary(variant_summary_file, grouped_submission_summary, genome_build_id, out_name):
 
-	raw_grouped_submission_summary = pd.read_csv(grouped_submission_summary, sep="\t", index_col=False, low_memory=False)
+	raw_grouped_submission_summary = pd.read_csv(grouped_submission_summary, sep="\t", index_col=False, low_memory=True)
 	print ("raw_grouped_submission_summary", raw_grouped_submission_summary.shape)
 
 	for index, row in raw_grouped_submission_summary.iterrows():
-		pass
+		#uniqueify_columns=['ORIGIN_COUNTS','SUBMITTED_GENE_SYMBOL']
+		#for u in uniqueify_columns:
+		u_field=set(row['SUBMITTED_GENE_SYMBOL'].split(";"))
+		if len(u_field)==1:
+			raw_grouped_submission_summary.at[index,row['SUBMITTED_GENE_SYMBOL']]=u_field.pop()
+		elif len(u_field)==2 and "-" in u_field:
+			u_field.discard("-")
+			raw_grouped_submission_summary.at[index,row['SUBMITTED_GENE_SYMBOL']]=u_field.pop()
+		else:
+			print(u_field)
+
+	return
+
 
 
 
@@ -108,6 +120,9 @@ def join_variant_summary_with_submission_summary(variant_summary_file, grouped_s
 	# extract relevant columns for the correct assembly and
 	# rename clinicalsignificance, reviewstatus, lastevaluated:
 	variant_summary = variant_summary[variant_summary['ASSEMBLY'] == genome_build_id]
+
+def clinStar():
+	pass
 
 
 
