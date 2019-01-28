@@ -15,9 +15,9 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
 	FINAL_HEADER = list(clinvar_alleles.columns.values) + ['GOLD_STARS', 'CONFLICTED']
 
 	# use lowercase names and replace . with _ in column names:
-	variant_summary = variant_summary.rename(columns=dict((col, col.upper().replace(".", "_"))for col in variant_summary.columns))
+	variant_summary = variant_summary.rename(columns=dict((col, col.upper().strip().strip("#").replace(".", "_"))for col in variant_summary.columns))
 	# rename first column to allele_id:
-	variant_summary = variant_summary.rename(columns={'#AlleleID': 'ALLELE_ID', 'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
+	variant_summary = variant_summary.rename(columns={'ALLELEID': 'ALLELE_ID', 'CLINICALSIGNIFICANCE': 'CLINICAL_SIGNIFICANCE','REVIEWSTATUS': 'REVIEW_STATUS','LASTEVALUATED':'LAST_EVALUATED'})
 	#variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "ALLELE_ID"})
 
 	# extract relevant columns for the correct assembly and
@@ -71,6 +71,45 @@ def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_all
 	df.to_csv(out_name, sep="\t", index=False, compression='gzip')
 
 	return
+
+def join_variant_summary_with_submission_summary(variant_summary_file, grouped_submission_summary, genome_build_id, out_name):
+
+	raw_grouped_submission_summary = pd.read_csv(grouped_submission_summary, sep="\t", index_col=False, low_memory=False)
+	print ("raw_grouped_submission_summary", raw_grouped_submission_summary.shape)
+
+	for index, row in raw_grouped_submission_summary.iterrows():
+		pass
+
+
+
+
+
+	variant_summary = pd.read_csv(variant_summary_table, sep="\t", index_col=False, compression="gzip",low_memory=False)
+	print ("variant_summary raw", variant_summary.shape)
+	# use lowercase names and replace . with _ in column names:
+	variant_summary = variant_summary.rename(columns=dict((col, col.upper().replace(".", "_").strip().strip("#").replace(" ", "_"))for col in variant_summary.columns))
+	# rename first column to allele_id:
+	variant_summary = variant_summary.rename(columns={"ALLELEID": 'ALLELE_ID',
+													"#ALLELEID": 'ALLELE_ID',
+													"CLINICALSIGNIFICANCE": 'CLINICAL_SIGNIFICANCE',
+													"REVIEWSTATUS": 'REVIEW_STATUS',
+													"LASTEVALUATED":'LAST_EVALUATED',
+													"VARIATIONID": 'VARIATION_ID',
+													"LASTEVALUATED":'DATE_LAST_EVALUATED',
+													"REVIEWSTATUS":'REVIEW_STATUS',
+													"CollectionMethod":'COLLECTION_METHOD',
+													"OriginCounts":'ORIGIN_COUNTS',
+													"Submitter":'SUBMITTER',
+													"SubmittedGeneSymbol":'SUBMITTED_GENE_SYMBOL',
+													"ExplanationOfInterpretation":'EXPLANATION_OF_INTERPRETATION'
+														})
+	#variant_summary = variant_summary.rename(columns={variant_summary.columns[0]: "ALLELE_ID"})
+
+	# extract relevant columns for the correct assembly and
+	# rename clinicalsignificance, reviewstatus, lastevaluated:
+	variant_summary = variant_summary[variant_summary['ASSEMBLY'] == genome_build_id]
+
+
 
 def main():
 	parser = argparse.ArgumentParser(description='Joins the grouped ClinVar xml parse output to the ClinVar TSV file')

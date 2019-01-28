@@ -11,15 +11,16 @@ import parse_clinvar_xml as pcx
 # recommended usage:   RUN ON A SORTED FILE!
 # ./group_by_allele.py < clinvar_combined.tsv > clinvar_alleles.tsv
 
-def group_submission_summary_file(infile_path, outfile_path, JSON):
+def group_submission_summary_file(infile_path, outfile_path):
 	""""""
 	inFile = gzip.open(infile_path, 'rt')
 	#inFile= io.BufferedReader(gz)
 	submission_file=dict()
 	header=[]
 	header_replace={"VariationID": 'VARIATION_ID',
+				"#VariationID": 'VARIATION_ID',
 				"ClinicalSignificance": 'CLINICAL_SIGNIFICANCE',
-				"DateLastEvaluated":'CLINICAL_SIGNIFICANCE',
+				"DateLastEvaluated":'SUBMISSION_DATES',
 				"Description":'DESCRIPTION',
 				"SubmittedPhenotypeInfo":'SUBMITTED_PHENOTYPE_INFO',
 				"ReportedPhenotypeInfo":'REPORTED_PHENOTYPE_INFO',
@@ -79,30 +80,14 @@ def group_submission_summary_file(infile_path, outfile_path, JSON):
 		for k,v in submission_file.iteritems():
 			outFile.write(k+'\t')
 			outFile.write("\t".join(v[:-1]))
-			#outFile.write("\t".join(v[-1].values())+"\n")
 			outFile.write("\t".join(str(e) for e in v[-1].values())+"\n")
 	except AttributeError:
 		for k,v in submission_file.items():
 			outFile.write(k+'\t')
 			outFile.write("\t".join(v[:-1]))
-			#outFile.write("\t".join(v[-1].values())+"\n")
 			outFile.write("\t".join(str(e) for e in v[-1].values())+"\n")
 
-
-	if JSON:
-		return submission_file
-	else:
-		return
-
-
-
-
-
-
-
-
-
-
+	return submission_file
 
 def group_by_allele_rawXML(infile_path, outfile_path):
 	"""Run through a SORTED clinvar_table.tsv file from the parse_clinvar_xml script, and make it unique on CHROM POS REF ALT

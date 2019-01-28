@@ -214,9 +214,13 @@ def main():
 			runXMLpipeLine(cli_args, 'GRCh38',cli_args.b38fasta)
 
 	if cli_args.run_tsv:
-		gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", False)
-		#TODO!!!  Do all the things!
+		print ("Running tsv only pipeline")
 		#QUESTION what do the haplotypes look like in pure tsv?
+		#NOTE!!! Spot checked and VariantID doesn't seem to be present in variant_summary file for haplotypes.  Though haplotype entrys are present, marked as:
+		#			'no interpretation for the single variant'... Need more systematic check... skip for now
+		gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
+		isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", 'GRCh38', cli_args.output_dir+'GRCh38'+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+'GRCh38'+".tsv.gz")
+
 		pass
 
 	#remves temp files.
