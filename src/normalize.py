@@ -178,7 +178,6 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
         except SequenceNotPresent as e:
             sys.stderr.write('\n'+str(e)+'\n')
             invalid_chrom += 1
-            if SKIP_ON_BASE_ERROR:
                 continue
         data['POS'] = str(pos)
         outfile.write('\t'.join([data[column] for column in columns]) + '\n')
