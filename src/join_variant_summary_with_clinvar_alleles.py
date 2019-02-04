@@ -158,7 +158,7 @@ def join_variant_summary_with_submission_summary(variant_summary_file, grouped_s
 		'-':'-'
 	}
 	df['GOLD_STARS'] = df.REVIEW_STATUS.map(gold_star_map)
-	df['POS']=df.['START']
+	df['POS']=df['START']
 
 	# The use of expressions on clinical significance on ClinVar aggregate records (RCV) https://www.ncbi.nlm.nih.gov/clinvar/docs/clinsig/#conflicts
 	# conflicted = 1 if using "conflicting"
