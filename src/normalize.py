@@ -121,14 +121,14 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
     infile=None
     if in_file.endswith(".gz"):
     	try:
-    		inFile = gzip.open(in_file, 'rt')
+    		infile = gzip.open(in_file, 'rt')
     	except ValueError:
     		# Workaround for Python 2.7 under Windows
-    		inFile = gzip.open(in_file, "r")
+    		infile = gzip.open(in_file, "r")
     else:
         infile= open(in_file,'r')
 
-    outfile=gzip.open(out_file,'w')
+    outfile=open(out_file,'w')
     pysam_fasta = pysam.FastaFile(reference_fasta) # create a pysam object of the reference genome
     header = infile.readline() # get header of input file
     columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
