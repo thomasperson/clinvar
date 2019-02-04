@@ -60,12 +60,23 @@ class WrongRefError(Exception):
         def __str__(self):
             return repr(self.value)
 
+'''
+An Error class for when Chromosome not in the reference genome
+'''
+class SequenceNotPresent(Exception):
+        def __init__(self, value):
+            self.value = value
+        def __str__(self):
+            return repr(self.value)
+
 
 '''
 Accepts a pysam FastaFile object pointing to the reference genome, and
 chrom, pos, ref, alt genomic coordinates, and normalizes them.
 '''
 def normalize(pysam_fasta, chrom, pos, ref, alt):
+    if chrom not in {'1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '2', '20', '21', '22', '3', '4', '5', '6', '7', '8', '9', 'MT', 'X', 'Y'}:
+        raise SequenceNotPresent('Invalid chromosome: %s %s %s %s'%(chrom, pos, ref, alt))
     pos = int(pos) # make sure position is an integer
     ref = ref.upper().strip()
     alt = alt.upper().strip()
@@ -117,7 +128,7 @@ chrom, pos, ref, and alt, and writes all columns out to another file.  CNV have
 "na" as ref/alt.  Ref==Alt should not be dismissed as Reference not perfect, also
 "N" is used in Reference Fasta
 '''
-def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SKIP_ON_ERROR):
+def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SKIP_ON_BASE_ERROR):
     infile=None
     if in_file.endswith(".gz"):
     	try:
@@ -133,11 +144,11 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
     header = infile.readline() # get header of input file
     columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
     outfile.write('\t'.join(columns) + '\n') # write header line plus the CpG col to be generated
-    print(columns)
     counter = 0
     ref_equals_alt = 0
     wrong_ref = 0
     invalid_nucleotide = 0
+    invalid_chrom = 0
     for line in infile.readlines():
         if line.strip()=="":
             continue
@@ -152,17 +163,22 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
         except RefEqualsAltError as e:
             sys.stderr.write('\n'+str(e)+'\n')
             ref_equals_alt += 1
-            if SKIP_ON_ERROR:
+            if SKIP_ON_BASE_ERROR:
                 continue
         except WrongRefError as e:
             sys.stderr.write('\n'+str(e)+'\n')
             wrong_ref += 1
-            if SKIP_ON_ERROR:
+            if SKIP_ON_BASE_ERROR:
                 continue
         except InvalidNucleotideSequenceError as e:
             sys.stderr.write('\n'+str(e)+'\n')
             invalid_nucleotide += 1
-            if SKIP_ON_ERROR:
+            if SKIP_ON_BASE_ERROR:
+                continue
+        except SequenceNotPresent as e:
+            sys.stderr.write('\n'+str(e)+'\n')
+            invalid_chrom += 1
+            if SKIP_ON_BASE_ERROR:
                 continue
         data['POS'] = str(pos)
         outfile.write('\t'.join([data[column] for column in columns]) + '\n')
