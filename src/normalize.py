@@ -119,7 +119,7 @@ chrom, pos, ref, and alt, and writes all columns out to another file.  CNV have
 '''
 def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SKIP_ON_ERROR):
     infile=None
-    if in_file.endswith(".gz")
+    if in_file.endswith(".gz"):
     	try:
     		inFile = gzip.open(in_file, 'rt')
     	except ValueError:
