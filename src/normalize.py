@@ -31,6 +31,7 @@ Usage: normalize.py -R $b37ref < bad_file.txt > good_file.txt
 import sys
 import pysam
 import argparse
+import gzip
 
 '''
 An Error class for rare cases where REF == ALT (seen in ClinVar XML)
@@ -117,8 +118,17 @@ chrom, pos, ref, and alt, and writes all columns out to another file.  CNV have
 "N" is used in Reference Fasta
 '''
 def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SKIP_ON_ERROR):
-    infile= open(in_file,'r')
-    outfile=open(out_file,'w')
+    infile=None
+    if in_file.endswith(".gz").
+    	try:
+    		inFile = gzip.open(in_file, 'rt')
+    	except ValueError:
+    		# Workaround for Python 2.7 under Windows
+    		inFile = gzip.open(in_file, "r")
+    else:
+        infile= open(in_file,'r')
+
+    outfile=gzip.open(out_file,'w')
     pysam_fasta = pysam.FastaFile(reference_fasta) # create a pysam object of the reference genome
     header = infile.readline() # get header of input file
     columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
