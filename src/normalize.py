@@ -123,6 +123,7 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
     header = infile.readline() # get header of input file
     columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
     outfile.write('\t'.join(columns) + '\n') # write header line plus the CpG col to be generated
+    print(columns)
     counter = 0
     ref_equals_alt = 0
     wrong_ref = 0
