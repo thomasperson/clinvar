@@ -35,8 +35,11 @@ try:
 except ImportError as e:
 	sys.exit("ERROR: Python module not installed. %s. Please run 'pip install -r requirements.txt' " % e)
 
-for executable in ['tabix', 'bgzip', 'vcf-sort']:
-	assert spawn.find_executable(executable), "Command %s not found, see README" % executable
+try:
+	for executable in ['bgzip', 'vcf-sort','tabix']:
+		assert spawn.find_executable(executable)
+except:
+	"Command %s not found, see README" % executable
 
 pysam_installed=False
 try:
@@ -65,6 +68,7 @@ def downloadClinVarFiles(cli_args):
 	clinvar_xml="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarFullRelease_00-latest.xml.gz"
 	clinvar_variant_summary_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz"
 	clinvar_submission_summary_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz"
+	clinvar_citations_tsv="ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/var_citations.txt"
 
 	if cli_args.download_new:
 		if cli_args.run_xml:
@@ -75,6 +79,9 @@ def downloadClinVarFiles(cli_args):
 			print("Downloading "+  clinvar_submission_summary_tsv)
 			download_file(clinvar_submission_summary_tsv, cli_args.S_tsv_file)
 			print("Downloading of submission_summary.txt.gz complete")
+			print("Downloading "+  clinvar_citations_tsv)
+			download_file(clinvar_citations_tsv, cli_args.C_tsv_file)
+			print("Downloading of var_citations.txt complete")
 		print("Downloading " + clinvar_variant_summary_tsv)
 		download_file(clinvar_variant_summary_tsv, cli_args.V_tsv_file)
 		print("Downloading of variant_summary.txt.gz complete")
@@ -94,6 +101,11 @@ def downloadClinVarFiles(cli_args):
 			print("No ClinVar submission_summary file specified or specified file does not exist.  Downloading latest file to use")
 			download_file(clinvar_submission_summary_tsv, cli_args.S_tsv_file)
 			print("Downloading variant_summary.txt.gz complete")
+
+		if not checkExists(cli_args.C_tsv_file) and cli_args.run_tsv:
+			print("No ClinVar var_citations.txt file specified or specified file does not exist.  Downloading latest file to use")
+			download_file(clinvar_citations_tsv, cli_args.C_tsv_file)
+			print("Downloading of var_citations.txt complete")
 
 	return
 
@@ -171,6 +183,7 @@ def parseArguments():
 	g.add("-X", "--clinvar-xml", help="The local filename of the ClinVarFullRelase.xml.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="xml_file", default=dir_path+os.sep+"output_tmp"+os.sep+"ClinVarFullRelease_00-latest.xml.gz", type=str)
 	g.add("-V", "--clinvar-variant-summary-table", help="The local filename of the variant_summary.txt.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="V_tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"variant_summary.tsv.gz", type=str)
 	g.add("-S", "--clinvar-submission-summary-table", help="The local filename of the submission_summary.txt.gz file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="S_tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"submission_summary.txt.gz", type=str)
+	g.add("-C", "--clinvar-citation-table", help="The local filename of the var_citations.txt file. If not set, will download the latest from ClinVar NCBI FTP site.", dest="C_tsv_file", default=dir_path+os.sep+"output_tmp"+os.sep+"var_citations.txt", type=str)
 	g.add("--output-prefix", help="Final output files will have this prefix", type=str, dest='output_prefix',default="")
 	g.add("--output-dir", default=dir_path+os.sep+"output"+os.sep, help="Final output files will be located here", type=str, dest='output_dir')
 	g.add("-N", "--new", help='Download all New.  Causes ouput_tmp to be removed and recreated and latest ClinVar Files to be downloaded', action='store_true', default=False, dest="download_new")
@@ -218,8 +231,9 @@ def main():
 		#QUESTION what do the haplotypes look like in pure tsv?
 		#NOTE!!! Spot checked and VariantID doesn't seem to be present in variant_summary file for haplotypes.  Though haplotype entrys are present, marked as:
 		#			'no interpretation for the single variant'... Need more systematic check... skip for now
-		#gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
-		isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", 'GRCh38', cli_args.output_dir+'GRCh38'+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+'GRCh38'+".tsv.gz")
+		gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
+		gba.group_var_citations(cli_args.C_tsv_file, cli_args.output_tmp+"group_var_citations.tsv")
+		isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", cli_args.output_tmp+"group_var_citations.tsv",'GRCh38', cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+'GRCh38'+".tsv.gz")
 
 		pass
 

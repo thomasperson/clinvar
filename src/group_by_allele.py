@@ -13,18 +13,21 @@ import parse_clinvar_xml as pcx
 
 def group_submission_summary_file(infile_path, outfile_path):
 	""""""
-	inFile = gzip.open(infile_path, 'rt')
-	#inFile= io.BufferedReader(gz)
+	inFile = None
+	try:
+		inFile = gzip.open(infile_path, 'rt')
+	except ValueError:
+		# Workaround for Python 2.7 under Windows
+		inFile = gzip.open(infile_path, "r")
 	submission_file=dict()
 	header=[]
 	header_replace={"VariationID": 'VARIATION_ID',
-				"#VariationID": 'VARIATION_ID',
-				"ClinicalSignificance": 'CLINICAL_SIGNIFICANCE',
+				"ClinicalSignificance": 'CLINICAL_SIGNIFICANCE_INDV_SUB',
 				"DateLastEvaluated":'SUBMISSION_DATES',
 				"Description":'DESCRIPTION',
 				"SubmittedPhenotypeInfo":'SUBMITTED_PHENOTYPE_INFO',
 				"ReportedPhenotypeInfo":'REPORTED_PHENOTYPE_INFO',
-				"ReviewStatus":'REVIEW_STATUS',
+				"ReviewStatus":'REVIEW_STATUS_INDV_SUB',
 				"CollectionMethod":'COLLECTION_METHOD',
 				"OriginCounts":'ORIGIN_COUNTS',
 				"Submitter":'SUBMITTER',
@@ -76,7 +79,7 @@ def group_submission_summary_file(infile_path, outfile_path):
 				V_ClinSigField[fields[1].upper().strip().replace(" ", "_")]=1
 				value.append(V_ClinSigField)
 				submission_file[fields[0]]=value
-
+	inFile.close()
 	outFile = open(outfile_path,'w')
 	outFile.write("\t".join(header)+"\t")
 	outFile.write("\t".join(ClinSigField.keys())+"\n")
@@ -93,6 +96,37 @@ def group_submission_summary_file(infile_path, outfile_path):
 	outFile.close()
 
 	return submission_file
+
+def group_var_citations(infile_path, outfile_path):
+	""""""
+	inFile = open(infile_path, "r")
+	header=['VARIATION_ID','CITATION_SOURCE:CITATION_ID']
+	var_cite_file=dict()
+	for line in inFile:
+		if line.strip()=="":
+			continue
+		fields = [x.strip() for x in line.strip("#").split('\t')]
+		if line.startswith("#"):
+			continue
+		if fields[1] in var_cite_file:
+			var_cite_file[fields[1]].append(fields[-2]+":"+fields[-1])
+		else:
+			var_cite_file[fields[1]]=[fields[-2]+":"+fields[-1]]
+	inFile.close()
+	outFile = open(outfile_path,'w')
+	outFile.write("\t".join(header)+"\n")
+	try:
+		for k,v in var_cite_file.iteritems():
+			outFile.write(k+'\t')
+			outFile.write(";".join(v)+"\n")
+	except AttributeError:
+		for k,v in var_cite_file.items():
+			outFile.write(k+'\t')
+			outFile.write(";".join(v)+"\n")
+	outFile.close()
+
+	return var_cite_file
+
 
 def group_by_allele_rawXML(infile_path, outfile_path):
 	"""Run through a SORTED clinvar_table.tsv file from the parse_clinvar_xml script, and make it unique on CHROM POS REF ALT

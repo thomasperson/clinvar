@@ -48,6 +48,8 @@ The pipeline scripts expect the following programs to be available on your syste
 
 [python](https://www.python.org/), [tabix](http://www.htslib.org/download/), [bgzip](http://www.htslib.org/download/ ),[vcf-sort](https://vcftools.github.io/index.html)
 
+If not all are present some steps may be skipped.
+
 To run the pipeline:
 
 ```
