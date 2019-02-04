@@ -116,7 +116,7 @@ chrom, pos, ref, and alt, and writes all columns out to another file.  CNV have
 "na" as ref/alt.  Ref==Alt should not be dismissed as Reference not perfect, also
 "N" is used in Reference Fasta
 '''
-def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose=True, SKIP_ON_ERROR):
+def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SKIP_ON_ERROR):
     infile= open(in_file,'r')
     outfile=open(out_file,'w')
     pysam_fasta = pysam.FastaFile(reference_fasta) # create a pysam object of the reference genome
