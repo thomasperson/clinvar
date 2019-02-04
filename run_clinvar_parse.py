@@ -148,13 +148,14 @@ def createDirectories(cli_args):
 	return
 
 def runXMLpipeLine(cli_args, genome_build_id,fasta):
+	print("Running Original XML Pipeline")
 	pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, genome_build_id)   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
 	print("Sorting ouput Files:")
 	sortRawXMLoutTextFile(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv")
 	sortRawXMLoutTextFile(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv")
 	if pysam_installed:
-		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+""+genome_build_id+""+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv",fasta)
-		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv",fasta)
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+""+genome_build_id+""+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv",fasta,True,True)
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv",fasta,True,True)
 		gba.group_by_allele_rawXML(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.norm.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
 	else:
 		shutil.copyfile(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv",cli_args.output_dir+genome_build_id+os.sep+"multi"+os.sep+cli_args.output_prefix+"clinvar_multi_allele_haplotype."+genome_build_id+".tsv")
@@ -171,6 +172,19 @@ def runXMLpipeLine(cli_args, genome_build_id,fasta):
 		vcf.table_to_vcf(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz", cli_args.b37fasta, cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf")
 
 	return
+
+def runTSVpipeLine(cli_args, genome_build_id,fasta):
+	print ("Running TSV only pipeline")
+	gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
+	gba.group_var_citations(cli_args.C_tsv_file, cli_args.output_tmp+"group_var_citations.tsv")
+	isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", cli_args.output_tmp+"group_var_citations.tsv",genome_build_id, cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz")
+	if pysam_installed:
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.norm."+genome_build_id+".tsv.gz",fasta,True,False)
+	pass
+
+
+	return
+
 
 def parseArguments():
 	dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -227,14 +241,14 @@ def main():
 			runXMLpipeLine(cli_args, 'GRCh38',cli_args.b38fasta)
 
 	if cli_args.run_tsv:
-		print ("Running tsv only pipeline")
+
 		#QUESTION what do the haplotypes look like in pure tsv?
 		#NOTE!!! Spot checked and VariantID doesn't seem to be present in variant_summary file for haplotypes.  Though haplotype entrys are present, marked as:
 		#			'no interpretation for the single variant'... Need more systematic check... skip for now
-		gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
-		gba.group_var_citations(cli_args.C_tsv_file, cli_args.output_tmp+"group_var_citations.tsv")
-		isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", cli_args.output_tmp+"group_var_citations.tsv",'GRCh38', cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+'GRCh38'+".tsv.gz")
-
+		if cli_args.b37fasta is not None:
+			runTSVpipeLine(cli_args, 'GRCh37',cli_args.b37fasta)
+		if cli_args.b38fasta is not None:
+			runTSVpipeLine(cli_args, 'GRCh38',cli_args.b38fasta)
 		pass
 
 	#remves temp files.

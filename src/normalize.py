@@ -66,15 +66,15 @@ chrom, pos, ref, alt genomic coordinates, and normalizes them.
 '''
 def normalize(pysam_fasta, chrom, pos, ref, alt):
     pos = int(pos) # make sure position is an integer
-    ref = ref.upper()
-    alt = alt.upper()
+    ref = ref.upper().strip()
+    alt = alt.upper().strip()
     # Remove variants that contain invalid nucleotides
     if any(letter not in ['A','C','G','T','N','-'] for letter in ref + alt):
         raise InvalidNucleotideSequenceError('Invalid nucleotide sequence: %s %s %s %s'%(chrom, pos, ref, alt))
     # use blanks instead of hyphens
-    if ref == '-':
+    if ref == '-' or ref == '.':
         ref = ''
-    if alt == '-':
+    if alt == '-' or alt == '.':
         alt = ''
     # check whether the REF is correct
     true_ref = pysam_fasta.fetch(chrom, pos - 1, pos - 1 + len(ref)).upper()
@@ -112,9 +112,11 @@ def normalize(pysam_fasta, chrom, pos, ref, alt):
 '''
 This function takes a tab-delimited file with a header line containing columns
 named chrom, pos, ref, and alt, plus any other columns. It normalizes the
-chrom, pos, ref, and alt, and writes all columns out to another file.
+chrom, pos, ref, and alt, and writes all columns out to another file.  CNV have
+"na" as ref/alt.  Ref==Alt should not be dismissed as Reference not perfect, also
+"N" is used in Reference Fasta
 '''
-def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose=True):
+def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose=True, SKIP_ON_ERROR):
     infile= open(in_file,'r')
     outfile=open(out_file,'w')
     pysam_fasta = pysam.FastaFile(reference_fasta) # create a pysam object of the reference genome
@@ -139,15 +141,18 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose=Tru
         except RefEqualsAltError as e:
             sys.stderr.write('\n'+str(e)+'\n')
             ref_equals_alt += 1
-            continue
+            if SKIP_ON_ERROR:
+                continue
         except WrongRefError as e:
             sys.stderr.write('\n'+str(e)+'\n')
             wrong_ref += 1
-            continue
+            if SKIP_ON_ERROR:
+                continue
         except InvalidNucleotideSequenceError as e:
             sys.stderr.write('\n'+str(e)+'\n')
             invalid_nucleotide += 1
-            continue
+            if SKIP_ON_ERROR:
+                continue
         data['POS'] = str(pos)
         outfile.write('\t'.join([data[column] for column in columns]) + '\n')
         counter += 1
