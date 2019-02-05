@@ -153,8 +153,8 @@ def clinicalTestingOnly(merged_file,with_additonal_columns):
 			continue
 		data = dict(zip(columns,[x.strip() for x in line.strip().split('\t')]))
 
-		CLINICAL_SIGNIFICANCE_INDV_SUB=[x.strip() for x in data['CLINICAL_SIGNIFICANCE_INDV_SUB'].split("|")]
-		COLLECTION_METHOD=[x.strip() for x in data['COLLECTION_METHOD'].split("|")]
+		CLINICAL_SIGNIFICANCE_INDV_SUB=[x.strip() for x in data['CLINICAL_SIGNIFICANCE_INDV_SUB'].split(";")]
+		COLLECTION_METHOD=[x.strip() for x in data['COLLECTION_METHOD'].split(";")]
 		CLIN_PATH="0"
 		if len(CLINICAL_SIGNIFICANCE_INDV_SUB)==len(COLLECTION_METHOD):
 			for i, method in enumerate(COLLECTION_METHOD):

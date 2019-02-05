@@ -52,7 +52,7 @@ def group_submission_summary_file(infile_path, outfile_path):
 	for lineIndex,line in enumerate(inFile):
 		if line.strip()=="":
 			continue
-		fields = [x.strip() for x in line.strip("#").split('\t')]
+		fields = [x.strip().replace(";",":") for x in line.strip("#").split('\t')]
 		if line.startswith("#VariationID") and lineIndex>4:
 			for f in fields:
 				if f in header_replace:
@@ -62,7 +62,7 @@ def group_submission_summary_file(infile_path, outfile_path):
 		elif not line.startswith("#"):
 			if fields[0] in submission_file:
 				for i,f in enumerate(fields[1:]):
-					submission_file[fields[0]][i]=submission_file[fields[0]][i]+"|"+f
+					submission_file[fields[0]][i]=submission_file[fields[0]][i]+";"+f
 				if "/" in fields[1]:
 					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_")
 					submission_file[fields[0]][-1][newField1]+=1
@@ -105,7 +105,7 @@ def group_var_citations(infile_path, outfile_path):
 	for line in inFile:
 		if line.strip()=="":
 			continue
-		fields = [x.strip() for x in line.strip("#").split('\t')]
+		fields = [x.strip().replace(";",":") for x in line.strip("#").split('\t')]
 		if line.startswith("#"):
 			continue
 		if fields[1] in var_cite_file:
@@ -118,11 +118,11 @@ def group_var_citations(infile_path, outfile_path):
 	try:
 		for k,v in var_cite_file.iteritems():
 			outFile.write(k+'\t')
-			outFile.write("|".join(v)+"\n")
+			outFile.write(";".join(v)+"\n")
 	except AttributeError:
 		for k,v in var_cite_file.items():
 			outFile.write(k+'\t')
-			outFile.write("|".join(v)+"\n")
+			outFile.write(";".join(v)+"\n")
 	outFile.close()
 
 	return var_cite_file
