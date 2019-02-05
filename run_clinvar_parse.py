@@ -13,6 +13,7 @@ from distutils import spawn
 from distutils.dir_util import mkpath
 import shutil
 import operator
+import gzip
 
 sys.path.insert(0, 'src'+os.sep)
 
