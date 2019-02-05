@@ -130,6 +130,42 @@ def sortRawXMLoutTextFile(unSortedFile, sortedFile):
 	sorted_file.close()
 	return
 
+def clinicalTestingOnly(merged_file,with_additonal_columns):
+	"""This Method and provides a binary out where if a Clinical Testing Lab marked the
+	variant as Pathogenic or Likely Pathogentic, then marks the variant as True """
+	infile=None
+	if merged_file.endswith(".gz"):
+		try:
+			infile = gzip.open(merged_file, 'rt')
+		except ValueError:
+			# Workaround for Python 2.7 under Windows
+			infile = gzip.open(merged_file, "r")
+	else:
+		infile= open(with_additonal_columns,'r')
+
+	outfile=gzip.open(out_file,'w')
+	header = infile.readline() # get header of input file
+	columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
+	outfile.write('\t'.join(columns) + '\tCLIN_PATH\n')
+	for line in infile.readlines():
+		if line.strip()=="":
+			continue
+		data = dict(zip(columns,[x.strip() for x in line.strip().split('\t')]))
+
+		CLINICAL_SIGNIFICANCE_INDV_SUB=[x.strip() for x in data['CLINICAL_SIGNIFICANCE_INDV_SUB'].split(";")]
+		COLLECTION_METHOD=[x.strip() for x in data['COLLECTION_METHOD'].split(";")]
+		CLIN_PATH="0"
+		for i, method in enumerate(COLLECTION_METHOD):
+			if method =="clinical testing" and "ATHOGENIC" in CLINICAL_SIGNIFICANCE_INDV_SUB[i].upper():
+				CLIN_PATH="1"
+		outfile.write(line.strip() + "\t" + CLIN_PATH + "\n")
+	outfile.close()
+	return
+
+
+
+
+
 def createDirectories(cli_args):
 
 	if cli_args.download_new and os.path.exists(cli_args.output_tmp):
@@ -178,9 +214,13 @@ def runTSVpipeLine(cli_args, genome_build_id,fasta):
 	gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
 	gba.group_var_citations(cli_args.C_tsv_file, cli_args.output_tmp+"group_var_citations.tsv")
 	isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", cli_args.output_tmp+"group_var_citations.tsv",genome_build_id, cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz")
-	if pysam_installed:
-		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.norm."+genome_build_id+".tsv",fasta,True,False)
+	clinicalTestingOnly(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz")
 	pass
+	if pysam_installed:
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.norm."+genome_build_id+".tsv",fasta,True,False)
+		pass
+	else:
+		pass
 
 
 	return

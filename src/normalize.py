@@ -125,7 +125,7 @@ def normalize(pysam_fasta, chrom, pos, ref, alt):
 This function takes a tab-delimited file with a header line containing columns
 named chrom, pos, ref, and alt, plus any other columns. It normalizes the
 chrom, pos, ref, and alt, and writes all columns out to another file.  CNV have
-"na" as ref/alt.  Ref==Alt should not be dismissed as Reference not perfect, also
+"na" as ref/alt.  Ref==Alt should not be dismissed as Reference not perfect,
 "N" is used in Reference Fasta
 '''
 def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SKIP_ON_BASE_ERROR):

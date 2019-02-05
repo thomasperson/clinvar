@@ -3,6 +3,7 @@ import sys
 import pandas as pd
 import argparse
 import re
+import gzip
 
 def join_variant_summary_with_clinvar_alleles(variant_summary_table, clinvar_alleles_table,genome_build_id,out_name):
 
@@ -150,12 +151,14 @@ def join_variant_summary_with_submission_summary(variant_summary_file, grouped_s
 		'no assertion provided': 0,
 		'no assertion for the individual variant': 0,
 		'no assertion criteria provided': 0,
+		'no interpretation for the single variant' : 0,
+		'-': 0
 		'criteria provided, single submitter': 1,
 		'criteria provided, conflicting interpretations': 1,
 		'criteria provided, multiple submitters, no conflicts': 2,
 		'reviewed by expert panel': 3,
 		'practice guideline': 4,
-		'-':'-'
+
 	}
 	df['GOLD_STARS'] = df.REVIEW_STATUS.map(gold_star_map)
 	df['POS']=df['START']
@@ -168,11 +171,6 @@ def join_variant_summary_with_submission_summary(variant_summary_file, grouped_s
 
 	df.to_csv(out_name, sep="\t", index=False, compression='gzip')
 	return
-
-def clinStar():
-	pass
-
-
 
 def main():
 	parser = argparse.ArgumentParser(description='Joins the grouped ClinVar xml parse output to the ClinVar TSV file')
