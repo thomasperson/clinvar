@@ -163,7 +163,7 @@ def clinicalTestingOnly(merged_file,with_additonal_columns):
 		else:
 			print(line)
 			print (str(len(CLINICAL_SIGNIFICANCE_INDV_SUB))+"\t"+str(len(COLLECTION_METHOD)))
-			outfile.write(line.strip() + "\t" + CLIN_PATH + "\n")
+		outfile.write(line.strip() + "\t" + CLIN_PATH + "\n")
 	outfile.close()
 	return
 
