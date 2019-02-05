@@ -216,9 +216,9 @@ def runXMLpipeLine(cli_args, genome_build_id,fasta):
 
 def runTSVpipeLine(cli_args, genome_build_id,fasta):
 	print ("Running TSV only pipeline")
-	#gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
-	#gba.group_var_citations(cli_args.C_tsv_file, cli_args.output_tmp+"group_var_citations.tsv")
-	#isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", cli_args.output_tmp+"group_var_citations.tsv",genome_build_id, cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz")
+	gba.group_submission_summary_file(cli_args.S_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv")
+	gba.group_var_citations(cli_args.C_tsv_file, cli_args.output_tmp+"group_var_citations.tsv")
+	isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", cli_args.output_tmp+"group_var_citations.tsv",genome_build_id, cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz")
 	clinicalTestingOnly(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz")
 	return
 	pass
