@@ -220,9 +220,9 @@ def runTSVpipeLine(cli_args, genome_build_id,fasta):
 	gba.group_var_citations(cli_args.C_tsv_file, cli_args.output_tmp+"group_var_citations.tsv")
 	isec.join_variant_summary_with_submission_summary(cli_args.V_tsv_file, cli_args.output_tmp+"group_submission_summary.tsv", cli_args.output_tmp+"group_var_citations.tsv",genome_build_id, cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz")
 	clinicalTestingOnly(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz")
-	return
 	pass
 	if pysam_installed:
+		print ("Normalizing ClinVar entries")
 		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path.norm."+genome_build_id+".tsv",fasta,True,False)
 		pass
 	else:
