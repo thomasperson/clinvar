@@ -154,6 +154,8 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
 			continue
 		data = dict(zip(columns,[x.strip() for x in line.strip().split('\t')]))
 		# fill the data with blanks for any missing data
+		if data['REF']== data['ALT'] and data['REF']="na":
+			continue #CNVs
 		for column in columns:
 			if column not in data.keys():
 				data[column] = ''
