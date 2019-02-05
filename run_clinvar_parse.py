@@ -223,7 +223,7 @@ def runTSVpipeLine(cli_args, genome_build_id,fasta):
 	return
 	pass
 	if pysam_installed:
-		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.norm."+genome_build_id+".tsv",fasta,True,False)
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path.norm."+genome_build_id+".tsv",fasta,True,False)
 		pass
 	else:
 		pass
