@@ -144,7 +144,7 @@ def clinicalTestingOnly(merged_file,with_additonal_columns):
 	else:
 		infile= open(merged_file,'r')
 
-	outfile=gzip.open(with_additonal_columns,'wb')
+	outfile=gzip.open(with_additonal_columns,'wt')
 	header = infile.readline() # get header of input file
 	columns = [x.strip() for x in header.strip().upper().split('\t')]  # parse col names
 	outfile.write('\t'.join(columns) + '\tCLIN_PATH\n')
