@@ -152,12 +152,12 @@ def join_variant_summary_with_submission_summary(variant_summary_file, grouped_s
 		'no assertion for the individual variant': 0,
 		'no assertion criteria provided': 0,
 		'no interpretation for the single variant' : 0,
-		'-': 0
+		'-': 0,
 		'criteria provided, single submitter': 1,
 		'criteria provided, conflicting interpretations': 1,
 		'criteria provided, multiple submitters, no conflicts': 2,
 		'reviewed by expert panel': 3,
-		'practice guideline': 4,
+		'practice guideline': 4
 
 	}
 	df['GOLD_STARS'] = df.REVIEW_STATUS.map(gold_star_map)
