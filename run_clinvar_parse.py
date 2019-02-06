@@ -223,13 +223,22 @@ def runTSVpipeLine(cli_args, genome_build_id,fasta):
 	pass
 	if pysam_installed:
 		print ("Normalizing ClinVar entries")
-		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path.norm."+genome_build_id+".tsv",fasta,True,False)
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.normalized."+genome_build_id+".tsv.gz",fasta,True,False)
 		pass
 	else:
-		pass
-
+		shutil.copyfile(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz")
+	if spawn.find_executable('vcf-sort') is not None:
+		vcf.table_to_vcf(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf")
+		os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf > "+cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".sorted.vcf")
+		if spawn.find_executable('bgzip') is not None:
+			os.system("bgzip -f "+cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".sorted.vcf")
+			if spawn.find_executable('tabix') is not None:
+				os.system("tabix -p vcf -f "+cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".sorted.vcf.gz")
+	else:
+		vcf.table_to_vcf(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz", cli_args.b37fasta, cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf")
 
 	return
+
 
 
 def parseArguments():
