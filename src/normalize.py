@@ -158,7 +158,7 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
 		data = dict(zip(columns,[x.strip() for x in line.strip().split('\t')]))
 		# fill the data with blanks for any missing data
 		if data['ALT'] =="na" or data['REF']=="na":
-			continue #CNVs
+			continue #CNVs in clinvar
 		for column in columns:
 			if column not in data.keys():
 				data[column] = ''
@@ -166,7 +166,7 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
 		try:
 			data['CHROM'], pos, data['REF'], data['ALT'] = normalize(pysam_fasta, data['CHROM'], pos, data['REF'], data['ALT'])
 		except RefEqualsAltError as e:
-			sys.stderr.write('\n'+str(e)+'\n')
+			#sys.stderr.write('\n'+str(e)+'\n')
 			ref_equals_alt += 1
 			if SKIP_ON_BASE_ERROR:
 				continue
@@ -187,7 +187,7 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
 		data['POS'] = str(pos)
 		outfile.write('\t'.join([data[column] for column in columns]) + '\n')
 		counter += 1
-		if verbose and counter % 1000 == 0:
+		if verbose and counter % 10000 == 0:
 			sys.stderr.write("\r%s records processed\n"%(counter))
 	outfile.close()
 	infile.close()
