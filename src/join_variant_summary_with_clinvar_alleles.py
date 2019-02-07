@@ -97,9 +97,7 @@ def join_variant_summary_with_submission_summary(variant_summary_file, grouped_s
 
 	variant_summary = pd.read_csv(variant_summary_file, sep="\t", index_col=False, compression="gzip",low_memory=False)
 	print ("variant_summary raw", variant_summary.shape)
-	# use lowercase names and replace . with _ in column names:
 	#variant_summary = variant_summary.rename(columns=dict((col, col.upper().replace("#", "").replace(".", "_").strip().strip("#").replace(" ", "_").replace("/","_").replace("(","").replace(")","")) for col in variant_summary.columns))
-	#rename first column to allele_id:
 	variant_summary = variant_summary.rename(columns={"#AlleleID": 'ALLELE_ID',
 											"Type": 'TYPE',
 											"Name": 'NAME',
@@ -133,9 +131,8 @@ def join_variant_summary_with_submission_summary(variant_summary_file, grouped_s
 																		})
 
 	variant_summary = variant_summary[variant_summary['ASSEMBLY'] == genome_build_id]
-	print ("variant_summary buildID", variant_summary.shape)
 	variant_summary=variant_summary.drop_duplicates()
-	print ("variant_summary drop_duplicates", variant_summary.shape)
+	print ("variant_summary buildID", variant_summary.shape)
 
 	variant_summary['VARIATION_ID'] = variant_summary['VARIATION_ID'].astype(int)
 
