@@ -53,9 +53,6 @@ def group_submission_summary_file(infile_path, outfile_path):
 		if line.strip()=="":
 			continue
 		fields = [x.strip().replace(";",":") for x in line.strip("#").split('\t')]
-		if fields[1].upper().strip().replace(" ", "_") not in ClinSigField:
-			print(fields[1].upper().strip().replace(" ", "_"))
-			continue
 		if line.startswith("#VariationID") and lineIndex>4:
 			for f in fields:
 				if f in header_replace:
@@ -72,6 +69,9 @@ def group_submission_summary_file(infile_path, outfile_path):
 				else:
 					submission_file[fields[0]][-1][fields[1].upper().strip().replace(" ", "_")]+=1
 			else:
+				if fields[1].upper().strip().replace(" ", "_") not in ClinSigField:
+					print(fields[1].upper().strip().replace(" ", "_"))
+					continue
 				value=[]
 				if "/" in fields[1]:
 					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_")
