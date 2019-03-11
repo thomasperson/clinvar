@@ -57,6 +57,7 @@ def table_to_vcf(input_table_path, input_reference_genome, output_vcf):
 		'GENE_ID': "NCBI's identfier for the gene in which this allele is found.  Will be null if the variant is intergenic or spans multiple genes.",
 		'ALLELE_ID' : "The identifier assigned by ClinVar to the simple allele. Will be null if the allele is complex.",
 		'TYPE' : "The type of HGVS expression",
+		'CLIN_PATH' : "1 for True, 0 for False.  If any Clinical Lab has returned the variant as a P/LP then set to 1.",
 
 
 
