@@ -1,11 +1,16 @@
 """
-Alternate implementation of master.py.  Removing pysam, pypez, and non clinvar related functions.
-Making as python as can so can run on windows and *nix based systems.  Making complient for
-python3 as well as python2
+Alternate implementation of master.py.
+Working on making Python3 and Windows complaint.
 
 Run with -h to see all options.
+
+This script will run the origianl XML pipeline and the new TSV pipeline to extract
+out indivial lab submissions and combine them with the overal varaint classification
 """
 
+__author__ = "Thomas Nate Person"
+__license__ = "MIT License"
+__email__ = "Thomas.N.Person@gmail.com"
 
 import os
 import sys
@@ -48,7 +53,7 @@ try:
 	import normalize
 	pysam_installed=True
 except ImportError as e:
-	print("ERROR: Python module pysam not installed. normalize.py will not be run." )  ###NOTE:  normalize.py uses pysam for fasta access. TODO: Maybe I can pull out just that portion or reimplement or find another python module.
+	print("ERROR: Python module pysam not installed. normalize.py will not be run." )
 
 
 def checkExists(fileAndPath):
@@ -111,6 +116,7 @@ def downloadClinVarFiles(cli_args):
 	return
 
 def sortRawXMLoutTextFile(unSortedFile, sortedFile):
+	"""Python Sort of file to remove dependency of linux sort fucntion"""
 	to_sort=open(unSortedFile,'r')
 	sorted_file=open(sortedFile,'w')
 	header=0
@@ -132,7 +138,7 @@ def sortRawXMLoutTextFile(unSortedFile, sortedFile):
 	return
 
 def clinicalTestingOnly(merged_file,with_additonal_columns):
-	"""This Method and provides a binary out where if a Clinical Testing Lab marked the
+	"""This Method and provides adds a column that if a Clinical Testing Lab marked the
 	variant as Pathogenic or Likely Pathogentic, then marks the variant as True """
 	infile=None
 	if merged_file.endswith(".gz"):
@@ -168,9 +174,6 @@ def clinicalTestingOnly(merged_file,with_additonal_columns):
 	return
 
 
-
-
-
 def createDirectories(cli_args):
 
 	if cli_args.download_new and os.path.exists(cli_args.output_tmp):
@@ -193,7 +196,7 @@ def createDirectories(cli_args):
 
 def runXMLpipeLine(cli_args, genome_build_id,fasta):
 	print("Running Original XML Pipeline")
-	pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, genome_build_id)   #NOTE  parse_clinvar_xml.py uses findall pretty extensivly rather than relying structure of the xml....  need to check this for accuracy.
+	pcx.parse_clinvar_tree(cli_args.xml_file, cli_args.output_tmp, genome_build_id)
 	print("Sorting ouput Files:")
 	sortRawXMLoutTextFile(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv")
 	sortRawXMLoutTextFile(cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".tsv",cli_args.output_tmp+"clinvar_table_raw.multi."+genome_build_id+".sorted.tsv")
@@ -238,11 +241,7 @@ def runTSVpipeLine(cli_args, genome_build_id,fasta):
 	else:
 		shutil.copyfile(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.clin_path."+genome_build_id+".tsv.gz")
 
-
-
 	return
-
-
 
 def parseArguments():
 	dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -288,11 +287,6 @@ def main():
 	#Runs the original, XML pipeline.  NOT default.
 	if cli_args.run_xml:
 
-		##TODO!!!!!!  Currntly only does one genome build at a time.  Should just ouput both at same time cli_args.output_tmp so xml doesn't have to be parsed twice
-		##NOTE Multi done after parse and sort and normalize...  Grouping by allele doens't make sense when everything in is haplotyped based.  Need a new grouping stratagy for multi.
-		##QUESTION: How many Multi show up only in multi and havie higher/lower stars?
-		##NOTE!!! There are missing variants in the multi.
-		##NOTE!!!  Just gonna build a new pipeline to just use tsv files. The Submission summary table can be joined to the Variant summary table on allele ID
 		if cli_args.b37fasta is not None:
 			runXMLpipeLine(cli_args, 'GRCh37',cli_args.b37fasta)
 		if cli_args.b38fasta is not None:
@@ -300,9 +294,6 @@ def main():
 
 	if cli_args.run_tsv:
 
-		#QUESTION what do the haplotypes look like in pure tsv?
-		#NOTE!!! Spot checked and VariantID doesn't seem to be present in variant_summary file for haplotypes.  Though haplotype entrys are present, marked as:
-		#			'no interpretation for the single variant'... Need more systematic check... skip for now
 		if cli_args.b37fasta is not None:
 			runTSVpipeLine(cli_args, 'GRCh37',cli_args.b37fasta)
 		if cli_args.b38fasta is not None:
