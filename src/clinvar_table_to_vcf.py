@@ -106,7 +106,7 @@ def table_to_vcf_oneline(input_table_path, input_reference_genome, output_vcf):
 	""""This method creates a vcf with a subset of available tsv fields, merged
 	into one vcf info field."""
 
-	DayMonthYear =time.strftime("%d")+time.strftime("%b")+time.strftime("%Y").upper()
+	DayMonthYear =str(time.strftime("%d")+time.strftime("%b")+time.strftime("%Y")).upper()
 
 	# validate args
 	input_reference_genome_fai = input_reference_genome + ".fai"
@@ -125,7 +125,7 @@ def table_to_vcf_oneline(input_table_path, input_reference_genome, output_vcf):
 	if missing_columns:
 		sys.exit("ERROR: %s is missing columns: %s" % (input_table_path, str(missing_columns)))
 
-	outVCF.write("##fileformat=VCFv4.3\n##source=clinvar\n")
+	outVCF.write("##fileformat=VCFv4.2\n##source=clinvar\n")
 
 	df = df[['VARIATION_ID','ALLELE_ID','CHROM','POS','REF','ALT','NAME','TYPE','GENE_SYMBOL','CLINICAL_SIGNIFICANCE','CLIN_SIG_SIMPLE','LAST_EVALUATED','RS_NUM_DBSNP','REVIEW_STATUS','NUMBER_OF_SUBMITTERS','GOLD_STARS','CONFLICTED','CLIN_PATH']]
 
@@ -138,7 +138,7 @@ def table_to_vcf_oneline(input_table_path, input_reference_genome, output_vcf):
 
 	vcf_info_key="CLINVAR_"+DayMonthYear
 
-	outVCF.write("##INFO=<ID=CLINVAR_"+DayMonthYear+",Number=.,Type=String,Description=\"CLINVAR_" + DayMonthYear+": '"+"|".join(HEADER)+"'\">\n")
+	outVCF.write("##INFO=<ID=CLINVAR_"+DayMonthYear+",Number=.,Type=String,Description=\"ClinVar Annotations.  Format: '"+"|".join(HEADER)+"'\">\n")
 
 	with open(input_reference_genome_fai) as in_fai:
 		for line in in_fai:
@@ -167,7 +167,10 @@ def table_to_vcf_oneline(input_table_path, input_reference_genome, output_vcf):
 			if pd.isnull(table_row[key]):
 				continue
 			value = str(table_row[key]).strip()
-			value = value.replace(":", "%3A").replace(";", "%3B").replace("=", "%3D").replace(" ", "_").replace(",", "%2C").strip()
+			if key =="NAME":
+				value = value.replace(":", "").replace(";", "%3B").replace("=", "%3D").replace(" ", "").replace(",", "").strip()
+			else:
+				value = value.replace(":", "%3A").replace(";", "%3B").replace("=", "%3D").replace(" ", "_").replace(",", "").strip().upper()
 			ClinVarOutInfoField+=value+"|"
 
 		vcf_row.append(ClinVarOutInfoField.strip("|"))

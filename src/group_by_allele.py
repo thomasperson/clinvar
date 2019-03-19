@@ -74,7 +74,7 @@ def group_submission_summary_file(infile_path, outfile_path):
 					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_")
 					fields[1]=newField1
 				if fields[1].upper().strip().replace(" ", "_") not in ClinSigField:
-					print(fields[1].upper().strip().replace(" ", "_"))
+					print("WARNING! NON STANDARD CLINICAL_SIGNIFICANCE:\t"+ fields[1].upper().strip().replace(" ", "_")+" FOUND")
 					continue
 				for f in fields[1:]:
 					value.append(f)
