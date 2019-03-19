@@ -209,7 +209,7 @@ def runXMLpipeLine(cli_args, genome_build_id,fasta):
 		gba.group_by_allele_rawXML(cli_args.output_tmp+"clinvar_table_raw.single."+genome_build_id+".sorted.tsv", cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv")
 	isec.join_variant_summary_with_clinvar_alleles(cli_args.V_tsv_file, cli_args.output_tmp+"clinvar_alleles_grouped.single."+genome_build_id+".tsv", genome_build_id,cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz")
 	if spawn.find_executable('vcf-sort') is not None:
-		vcf.table_to_vcf(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf")
+		vcf.table_to_vcf_oneline(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf")
 		os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single."+genome_build_id+".unsorted.vcf > "+cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".sorted.vcf")
 		if spawn.find_executable('bgzip') is not None:
 			os.system("bgzip -f "+cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single."+genome_build_id+".sorted.vcf")
