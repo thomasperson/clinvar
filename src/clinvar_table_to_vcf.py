@@ -127,14 +127,11 @@ def table_to_vcf_oneline(input_table_path, input_reference_genome, output_vcf):
 
 	outVCF.write("##fileformat=VCFv4.2\n##source=clinvar\n")
 
-	df = df[['VARIATION_ID','ALLELE_ID','CHROM','POS','REF','ALT','NAME','TYPE','GENE_SYMBOL','CLINICAL_SIGNIFICANCE','CLIN_SIG_SIMPLE','LAST_EVALUATED','RS_NUM_DBSNP','REVIEW_STATUS','NUMBER_OF_SUBMITTERS','GOLD_STARS','CONFLICTED','CLIN_PATH']]
+	df = df[['VARIATION_ID','CHROM','POS','REF','ALT','ASSEMBLY','NAME','TYPE','GENE_SYMBOL','CLINICAL_SIGNIFICANCE','CLIN_SIG_SIMPLE','LAST_EVALUATED','RS_NUM_DBSNP','REVIEW_STATUS','NUMBER_OF_SUBMITTERS','GOLD_STARS','CONFLICTED','CLIN_PATH']]
 
 	HEADER=list(df.columns.values)
 
 	loc_column = ['CHROM', 'POS', 'REF', 'ALT']
-
-	for l_c in loc_column:
-		HEADER.remove(l_c)
 
 	vcf_info_key="CLINVAR_"+DayMonthYear
 
@@ -158,8 +155,6 @@ def table_to_vcf_oneline(input_table_path, input_reference_genome, output_vcf):
 		vcf_row.append('.')  # FILTER
 
 		info_field = collections.OrderedDict()
-
-
 
 		ClinVarOutInfoField=vcf_info_key+"="
 
