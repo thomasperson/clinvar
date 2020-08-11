@@ -41,7 +41,7 @@ def group_submission_summary_file(infile_path, outfile_path):
 								('LIKELY_PATHOGENIC',0),
 								('PATHOGENIC',0),
 								('DRUG_RESPONSE',0),
-								('ASSOCIATION',0),
+								('ASSOCIATION',0),  
 								('RISK_FACTOR',0),
 								('PROTECTIVE',0),
 								('AFFECTS',0),
@@ -64,17 +64,20 @@ def group_submission_summary_file(infile_path, outfile_path):
 				for i,f in enumerate(fields[1:]):
 					submission_file[fields[0]][i]=submission_file[fields[0]][i]+";"+f
 				if "/" in fields[1]:
-					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_")
+					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_").replace(",","")
 					submission_file[fields[0]][-1][newField1]+=1
+				elif fields[1].upper().strip().replace(" ", "_").replace(",","") not in ClinSigField:
+					print("WARNING! NON STANDARD CLINICAL_SIGNIFICANCE:\t'"+ fields[1].upper().strip()+"' FOUND")
+					continue
 				else:
-					submission_file[fields[0]][-1][fields[1].upper().strip().replace(" ", "_")]+=1
+					submission_file[fields[0]][-1][fields[1].upper().strip().replace(" ", "_").replace(",","")]+=1
 			else:
 				value=[]
 				if "/" in fields[1]:
 					newField1=fields[1].split("/")[-1].upper().strip().replace(" ", "_")
 					fields[1]=newField1
-				if fields[1].upper().strip().replace(" ", "_") not in ClinSigField:
-					print("WARNING! NON STANDARD CLINICAL_SIGNIFICANCE:\t"+ fields[1].upper().strip().replace(" ", "_")+" FOUND")
+				if fields[1].upper().strip().replace(" ", "_").replace(",","") not in ClinSigField:
+					print("WARNING! NON STANDARD CLINICAL_SIGNIFICANCE:\t'"+ fields[1].upper().strip()+"' FOUND")
 					continue
 				for f in fields[1:]:
 					value.append(f)

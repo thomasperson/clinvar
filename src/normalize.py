@@ -32,6 +32,7 @@ import sys
 import pysam
 import argparse
 import gzip
+import re
 
 '''
 An Error class for rare cases where REF == ALT (seen in ClinVar XML)
@@ -69,6 +70,14 @@ class SequenceNotPresent(Exception):
 		def __str__(self):
 			return repr(self.value)
 
+'''
+An Error class for when Reference Sequence Unknown in the reference genome
+'''
+class SequenceUnknown(Exception):
+		def __init__(self, value):
+			self.value = value
+		def __str__(self):
+			return repr(self.value)
 
 '''
 Accepts a pysam FastaFile object pointing to the reference genome, and
@@ -83,6 +92,9 @@ def normalize(pysam_fasta, chrom, pos, ref, alt):
 	# Remove variants that contain invalid nucleotides
 	if any(letter not in ['A','C','G','T','N','-'] for letter in ref + alt):
 		raise InvalidNucleotideSequenceError('Invalid nucleotide sequence: %s %s %s %s'%(chrom, pos, ref, alt))
+	# Time-saving shortcut for SNPs that are already minimally represented
+	if len(ref) == 1 and len(alt) == 1 and ref in ['A','C','G','T'] and alt in ['A','C','G','T']:
+		return chrom, pos, ref, alt
 	# use blanks instead of hyphens
 	if ref == '-' or ref == '.':
 		ref = ''
@@ -91,14 +103,23 @@ def normalize(pysam_fasta, chrom, pos, ref, alt):
 	# check whether the REF is correct
 	true_ref = pysam_fasta.fetch(chrom, pos - 1, pos - 1 + len(ref)).upper()
 	if ref != true_ref:
-		raise WrongRefError('Incorrect REF value: %s %s %s %s (actual REF should be %s)'%(chrom, pos, ref, alt, true_ref))
+		x = re.search("^N+$", true_ref)
+		wrong_pos = pysam_fasta.fetch(chrom, pos - 2, pos -2 + len(ref)).upper()
+		if ref == wrong_pos:
+			pos = pos-1
+            # someone thought they had 0 based pos, but had 1 based.  Added 1 to get their stuff to 1 based, and now are off
+			#raise WrongRefError('Incorrect POS value caused incorrect REF: %s %s %s %s (actual POS should be %s, pos-1 REF is %s)'%(chrom, pos, ref, alt, pos-1, wrong_pos))
+			#print (ref + "\t==\t" + wrong_pos)
+			pass
+		elif x is not None:
+			raise WrongRefError('Incorrect REF value: %s %s %s %s (actual REF should be %s )'%(chrom, pos, ref, alt, true_ref))
+		else:
+			raise SequenceUnknown('REF in provided fasta Unknown: %s %s %s %s Check Fasta file. )'%(chrom, pos, ref, alt))
 	# Prevent infinte loops in cases where REF == ALT.
 	# We have encountered this error in genomic coordinates from the ClinVar XML file
 	if ref == alt:
 		raise RefEqualsAltError('The REF and ALT allele are the same: %s %s %s %s'%(chrom, pos, ref, alt))
-	# Time-saving shortcut for SNPs that are already minimally represented
-	if len(ref) == 1 and len(alt) == 1 and ref in ['A','C','G','T'] and alt in ['A','C','G','T']:
-		return chrom, pos, ref, alt
+
 	# This first loop left-aligns and removes excess nucleotides on the right.
 	# This is Algorithm 1 lines 1-6 from Tan et al 2015
 	keep_working = True
@@ -152,6 +173,7 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
 	wrong_ref = 0
 	invalid_nucleotide = 0
 	invalid_chrom = 0
+	unknown_ref = 0
 	for line in infile.readlines():
 		if line.strip()=="":
 			continue
@@ -173,6 +195,11 @@ def normalize_tab_delimited_file(in_file, out_file, reference_fasta, verbose, SK
 		except WrongRefError as e:
 			sys.stderr.write('\n'+str(e)+'\n')
 			wrong_ref += 1
+			if SKIP_ON_BASE_ERROR:
+				continue
+		except SequenceUnknown as e:
+			sys.stderr.write('\n'+str(e)+'\n')
+			unknown_ref += 1
 			if SKIP_ON_BASE_ERROR:
 				continue
 		except InvalidNucleotideSequenceError as e:

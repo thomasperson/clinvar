@@ -229,7 +229,7 @@ def runTSVpipeLine(cli_args, genome_build_id,fasta):
 	pass
 	if pysam_installed:
 		print ("Normalizing ClinVar entries")
-		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.clin_path.normalized."+genome_build_id+".tsv.gz",fasta,True,False)
+		normalize.normalize_tab_delimited_file(cli_args.output_tmp+cli_args.output_prefix+"merged_cit_sub_sum.single.clin_path."+genome_build_id+".tsv.gz",cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.clin_path.normalized."+genome_build_id+".tsv.gz",fasta,True,True)
 		if spawn.find_executable('vcf-sort') is not None:
 			vcf.table_to_vcf_oneline(cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.clin_path.normalized."+genome_build_id+".tsv.gz", cli_args.b38fasta, cli_args.output_tmp+"clinvar_allele_trait_pairs.single.clin_path.normalized."+genome_build_id+".unsorted.vcf")
 			os.system("vcf-sort "+cli_args.output_tmp+"clinvar_allele_trait_pairs.single.clin_path.normalized."+genome_build_id+".unsorted.vcf > "+cli_args.output_dir+genome_build_id+os.sep+"single"+os.sep+cli_args.output_prefix+"clinvar_allele_trait_pairs.single.clin_path.normalized."+genome_build_id+".sorted.vcf")
